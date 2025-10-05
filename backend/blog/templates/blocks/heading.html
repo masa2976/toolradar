@@ -1,0 +1,19 @@
+{% load wagtailcore_tags %}
+
+{# 見出しブロックのテンプレート #}
+{# レベル（h2/h3/h4）に応じて動的にタグを生成 #}
+{# 目次生成のため、IDを自動生成 #}
+
+{% if self.level == 'h2' %}
+    <h2 id="heading-{{ self.text|slugify }}" class="text-2xl font-bold mt-8 mb-4">
+        {{ self.text }}
+    </h2>
+{% elif self.level == 'h3' %}
+    <h3 id="heading-{{ self.text|slugify }}" class="text-xl font-semibold mt-6 mb-3">
+        {{ self.text }}
+    </h3>
+{% elif self.level == 'h4' %}
+    <h4 id="heading-{{ self.text|slugify }}" class="text-lg font-medium mt-4 mb-2">
+        {{ self.text }}
+    </h4>
+{% endif %}

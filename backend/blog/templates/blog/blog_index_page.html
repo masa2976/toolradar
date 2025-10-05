@@ -1,0 +1,43 @@
+{% extends "blog/base.html" %}
+
+{% block title %}{{ page.title }} - ToolRadar{% endblock %}
+
+{% block content %}
+<div class="blog-index">
+    <h2>{{ page.title }}</h2>
+    {% if page.intro %}
+        <div class="intro" style="font-size: 1.125rem; color: #374151; margin-bottom: 2rem;">
+            {{ page.intro|richtext }}
+        </div>
+    {% endif %}
+    
+    <h3 style="margin-top: 2rem; margin-bottom: 1rem; color: #1F2937;">最新記事</h3>
+    {% if blog_pages %}
+        <div class="articles-list">
+        {% for post in blog_pages %}
+            <article style="border-bottom: 1px solid #E5E7EB; padding: 1.5rem 0;">
+                <h4 style="margin: 0 0 0.5rem 0;">
+                    <a href="{% pageurl post %}" style="color: #2563EB; text-decoration: none;">
+                        {{ post.title }}
+                    </a>
+                </h4>
+                {% if post.excerpt %}
+                    <p style="color: #6B7280; margin: 0.5rem 0;">{{ post.excerpt }}</p>
+                {% endif %}
+                <div style="font-size: 0.875rem; color: #9CA3AF; margin-top: 0.5rem;">
+                    {% if post.category %}
+                        <span>📁 {{ post.category }}</span>
+                    {% endif %}
+                    {% if post.investment_type %}
+                        <span style="margin-left: 1rem;">💰 {{ post.investment_type }}</span>
+                    {% endif %}
+                    <span style="margin-left: 1rem;">📅 {{ post.first_published_at|date:"Y年m月d日" }}</span>
+                </div>
+            </article>
+        {% endfor %}
+        </div>
+    {% else %}
+        <p style="color: #9CA3AF;">まだ記事が投稿されていません。</p>
+    {% endif %}
+</div>
+{% endblock %}
