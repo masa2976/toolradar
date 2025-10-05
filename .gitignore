@@ -62,3 +62,6 @@ logs/
 test_*.py
 split_tools.py
 *.bak
+
+# Django staticfiles (auto-generated)
+backend/staticfiles/
