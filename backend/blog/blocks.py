@@ -12,48 +12,27 @@ from wagtail.images.blocks import ImageChooserBlock
 # ASPアフィリエイトブロック
 # ========================================
 
-class BrokerBlock(blocks.StructBlock):
-    """証券会社情報ブロック"""
+class ComparisonItemBlock(blocks.StructBlock):
+    """汎用比較項目ブロック（証券会社、ツール、書籍など何でも比較可能）"""
     
     name = blocks.CharBlock(
-        label="証券会社名",
+        label="項目名",
         max_length=100,
-        help_text="例: DMM FX、GMOクリック証券"
+        help_text="例: DMM FX、MetaTrader 5、一番やさしいFXの本"
     )
     
-    logo = ImageChooserBlock(
-        label="ロゴ画像",
+    image = ImageChooserBlock(
+        label="画像",
         required=False,
-        help_text="証券会社のロゴ（推奨: 200×80px程度）"
+        help_text="ロゴ、サムネイル、表紙画像など（推奨: 200×200px程度）"
     )
     
     features = blocks.ListBlock(
         blocks.CharBlock(max_length=200),
-        label="特徴",
-        min_num=3,
-        max_num=5,
-        help_text="証券会社の主な特徴を3〜5個"
-    )
-    
-    bonus = blocks.CharBlock(
-        label="キャンペーン情報",
-        max_length=200,
-        required=False,
-        help_text="例: 新規口座開設で最大30万円キャッシュバック"
-    )
-    
-    min_deposit = blocks.CharBlock(
-        label="最低入金額",
-        max_length=50,
-        required=False,
-        help_text="例: 10,000円〜"
-    )
-    
-    commission = blocks.CharBlock(
-        label="手数料",
-        max_length=100,
-        required=False,
-        help_text="例: スプレッド0.2銭〜（米ドル/円）"
+        label="特徴・詳細",
+        min_num=1,
+        max_num=10,
+        help_text="比較ポイントを自由に記載（1〜10個）"
     )
     
     rating = blocks.DecimalBlock(
@@ -61,19 +40,35 @@ class BrokerBlock(blocks.StructBlock):
         min_value=0,
         max_value=5,
         decimal_places=1,
-        default=4.5,
-        help_text="5段階評価（0.0〜5.0）"
+        required=False,
+        help_text="5段階評価（0.0〜5.0）省略可"
+    )
+    
+    price_info = blocks.CharBlock(
+        label="価格・コスト情報",
+        max_length=100,
+        required=False,
+        help_text="例: 無料、月額980円、口座開設無料、¥1,540"
+    )
+    
+    highlight_text = blocks.CharBlock(
+        label="ハイライト",
+        max_length=100,
+        required=False,
+        help_text="例: 🎁新規口座開設で最大30万円、📚Amazon売れ筋1位"
     )
     
     cta_url = blocks.URLBlock(
-        label="アフィリエイトURL",
-        help_text="証券会社へのアフィリエイトリンク"
+        label="リンクURL",
+        required=False,
+        help_text="詳細ページまたはアフィリエイトURL（省略可）"
     )
     
     cta_text = blocks.CharBlock(
         label="ボタンテキスト",
         max_length=50,
-        default="今すぐ口座開設",
+        default="詳細を見る",
+        required=False,
         help_text="CTAボタンに表示するテキスト"
     )
     
@@ -81,30 +76,37 @@ class BrokerBlock(blocks.StructBlock):
         label="トラッキングID",
         max_length=50,
         required=False,
-        help_text="A/Bテスト用の識別ID"
+        help_text="A/Bテスト用の識別ID（省略可）"
     )
     
     class Meta:
-        icon = 'user'
-        label = '証券会社情報'
+        icon = 'list-ul'
+        label = '比較項目'
 
 
-class ASPComparisonBlock(blocks.StructBlock):
-    """ASP証券会社比較表ブロック"""
+class ComparisonTableBlock(blocks.StructBlock):
+    """汎用比較表ブロック（証券会社、ツール、書籍など何でも比較）"""
     
     title = blocks.CharBlock(
         label="比較表タイトル",
         max_length=100,
-        default="おすすめ証券会社TOP3",
-        help_text="比較表の見出し"
+        default="比較表",
+        help_text="例: おすすめFX証券会社TOP3、MT4 vs MT5徹底比較、初心者向け投資書籍3選"
     )
     
-    brokers = blocks.ListBlock(
-        BrokerBlock(),
-        label="証券会社リスト",
-        min_num=1,
+    description = blocks.TextBlock(
+        label="説明文",
+        max_length=500,
+        required=False,
+        help_text="比較表の概要や注意事項（省略可）"
+    )
+    
+    items = blocks.ListBlock(
+        ComparisonItemBlock(),
+        label="比較項目",
+        min_num=2,
         max_num=10,
-        help_text="比較する証券会社を追加"
+        help_text="比較する項目を追加（2〜10個）"
     )
     
     layout = blocks.ChoiceBlock(
@@ -114,14 +116,28 @@ class ASPComparisonBlock(blocks.StructBlock):
             ('cards', 'カード形式'),
             ('ranking', 'ランキング形式'),
         ],
-        default='table',
+        default='cards',
         help_text="比較表の表示レイアウト"
     )
     
+    show_rating = blocks.BooleanBlock(
+        label="評価を表示",
+        default=True,
+        required=False,
+        help_text="評価（星）を表示するか"
+    )
+    
+    show_price = blocks.BooleanBlock(
+        label="価格情報を表示",
+        default=True,
+        required=False,
+        help_text="価格・コスト情報を表示するか"
+    )
+    
     class Meta:
-        template = 'blocks/asp_comparison.html'
+        template = 'blocks/comparison_table.html'
         icon = 'table'
-        label = 'ASP比較表'
+        label = '比較表'
 
 
 class ASPCTABlock(blocks.StructBlock):
@@ -188,34 +204,26 @@ class ASPCTABlock(blocks.StructBlock):
 
 
 class ASPBannerBlock(blocks.StructBlock):
-    """アフィリエイトバナー広告ブロック"""
+    """
+    アフィリエイトバナー広告ブロック
     
-    image = ImageChooserBlock(
-        label="バナー画像",
-        help_text="バナー広告の画像（推奨: 728×90px または 300×250px）"
-    )
+    A8.net、もしもアフィリエイト、バリューコマース等のASPから提供される
+    バナー広告のHTMLコードをそのまま貼り付けて使用します。
+    """
     
-    url = blocks.URLBlock(
-        label="リンク先URL",
-        help_text="バナークリック時のリンク先（アフィリエイトURL）"
-    )
-    
-    alt_text = blocks.CharBlock(
-        label="代替テキスト",
-        max_length=200,
-        help_text="画像の説明（SEO・アクセシビリティ対応）"
-    )
-    
-    tracking_id = blocks.CharBlock(
-        label="トラッキングID",
-        max_length=50,
-        required=False,
-        help_text="クリック計測用のID"
+    html_code = blocks.TextBlock(
+        label="バナー広告コード",
+        help_text=(
+            "A8.net等のASPから提供されたバナー広告のHTMLコードを"
+            "そのまま貼り付けてください。\n"
+            "例: <a href=\"...\"><img src=\"...\" width=\"...\" height=\"...\"></a>"
+        ),
+        rows=5
     )
     
     class Meta:
         template = 'blocks/asp_banner.html'
-        icon = 'image'
+        icon = 'code'
         label = 'ASPバナー広告'
 
 

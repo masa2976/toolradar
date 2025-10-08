@@ -65,3 +65,6 @@ split_tools.py
 
 # Django staticfiles (auto-generated)
 backend/staticfiles/
+
+# Serena cache
+.serena/

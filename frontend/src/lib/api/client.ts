@@ -4,7 +4,10 @@ import axios, { AxiosError, AxiosInstance } from 'axios';
 // API Client設定
 // ============================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// サーバーサイド（Docker内部）とクライアントサイド（ブラウザ）で異なるURL
+const API_BASE_URL = typeof window === 'undefined'
+  ? process.env.API_URL || 'http://backend:8000'        // サーバーサイド（Docker内部）
+  : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';  // クライアントサイド（ブラウザ）
 
 /**
  * Axiosインスタンス
@@ -61,11 +64,14 @@ apiClient.interceptors.response.use(
       apiError.status = error.response.status;
       apiError.detail = error.response.data?.detail;
       
-      console.error('API Error:', {
-        status: error.response.status,
-        data: error.response.data,
-        url: error.config?.url,
-      });
+      // 404エラーはログを出さない（正常なケース）
+      if (error.response.status !== 404) {
+        console.error('API Error:', {
+          status: error.response.status,
+          data: error.response.data,
+          url: error.config?.url,
+        });
+      }
     } else if (error.request) {
       // ネットワークエラー
       apiError.message = 'Network error: Unable to reach server';

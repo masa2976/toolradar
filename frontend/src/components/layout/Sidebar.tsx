@@ -5,6 +5,7 @@ import { useWeeklyRanking } from '@/hooks/useRanking'
 import { RankingList } from '@/components/ui/RankingList'
 import { Loader2, TrendingUp } from 'lucide-react'
 import type { FilterState } from '@/components/ui/FilterPanel'
+import { ASPWidget } from '@/components/ui/ASPWidget'
 
 interface SidebarProps {
   onFilterChange?: (filters: FilterState) => void
@@ -22,6 +23,9 @@ export function Sidebar({ onFilterChange }: SidebarProps) {
         </h3>
         <FilterPanel onFilterChange={onFilterChange ?? (() => {})} />
       </div>
+
+      {/* ASPウィジェット（収益源） */}
+      <ASPWidget />
 
       {/* 人気ランキング TOP5 */}
       <div className="rounded-lg border bg-white p-6 shadow-sm">

@@ -28,43 +28,43 @@ export function RankingList({
       return {
         icon: <Sparkles className="w-4 h-4" />,
         text: 'NEW',
-        color: 'text-blue-600 bg-blue-50 border-blue-200',
+        color: 'text-primary bg-primary/10 border-primary/30',
       };
     }
     if (rankChange === '→') {
       return {
         icon: <Minus className="w-4 h-4" />,
         text: '変動なし',
-        color: 'text-gray-500 bg-gray-50 border-gray-200',
+        color: 'text-muted-foreground bg-muted border-border',
       };
     }
     if (rankChange.startsWith('↑')) {
       return {
         icon: <TrendingUp className="w-4 h-4" />,
         text: rankChange,
-        color: 'text-green-600 bg-green-50 border-green-200',
+        color: 'text-success bg-success/10 border-success/30',
       };
     }
     if (rankChange.startsWith('↓')) {
       return {
         icon: <TrendingDown className="w-4 h-4" />,
         text: rankChange,
-        color: 'text-red-600 bg-red-50 border-red-200',
+        color: 'text-destructive bg-destructive/10 border-destructive/30',
       };
     }
     return {
       icon: <Minus className="w-4 h-4" />,
       text: rankChange,
-      color: 'text-gray-500 bg-gray-50 border-gray-200',
+      color: 'text-muted-foreground bg-muted border-border',
     };
   };
 
   // 順位バッジの色（1-3位は特別）
   const getRankBadgeColor = (rank: number) => {
-    if (rank === 1) return 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white';
-    if (rank === 2) return 'bg-gradient-to-br from-gray-300 to-gray-500 text-white';
-    if (rank === 3) return 'bg-gradient-to-br from-orange-400 to-orange-600 text-white';
-    return 'bg-muted text-muted-foreground';
+    if (rank === 1) return 'bg-gradient-to-br from-yellow-400 to-yellow-600 dark:from-yellow-500 dark:to-yellow-700 text-white shadow-lg';
+    if (rank === 2) return 'bg-gradient-to-br from-gray-300 to-gray-500 dark:from-gray-400 dark:to-gray-600 text-white shadow-lg';
+    if (rank === 3) return 'bg-gradient-to-br from-orange-400 to-orange-600 dark:from-orange-500 dark:to-orange-700 text-white shadow-lg';
+    return 'bg-muted text-foreground';
   };
 
   // 順位サイズ（1-3位は大きく）
@@ -87,9 +87,9 @@ export function RankingList({
             )}
           >
             <CardContent className="p-4">
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                 {/* 順位バッジ */}
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 self-start sm:self-center">
                   <div 
                     className={cn(
                       'rounded-full flex items-center justify-center shadow-sm',
@@ -128,7 +128,7 @@ export function RankingList({
 
                   {/* 統計情報（詳細モード） */}
                   {!isCompact && (
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Eye className="w-4 h-4" />
                         <span>{item.week_views.toLocaleString()} PV</span>
@@ -147,7 +147,7 @@ export function RankingList({
                 </div>
 
                 {/* 順位変動 */}
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 self-start sm:self-center">
                   <Badge 
                     variant="outline"
                     className={cn(

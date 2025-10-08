@@ -14,14 +14,14 @@ export default function HomePage() {
         {/* コンテンツエリア */}
         <div className="container mx-auto px-4 py-8">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-            {/* メインコンテンツ（8/12） */}
-            <div className="lg:col-span-8">
-              <MainFeed />
+            {/* サイドバー（3/12） - 左側 */}
+            <div className="lg:col-span-3">
+              <Sidebar />
             </div>
 
-            {/* サイドバー（4/12） */}
-            <div className="lg:col-span-4">
-              <Sidebar />
+            {/* メインコンテンツ（9/12） - 右側 */}
+            <div className="lg:col-span-9">
+              <MainFeed />
             </div>
           </div>
         </div>

@@ -1,0 +1,62 @@
+{# コードブロックテンプレート #}
+<div class="code-block my-8 border border-gray-300 rounded-lg overflow-hidden shadow-sm">
+  {# ヘッダー（キャプション + 言語表示 + コピーボタン） #}
+  <div class="code-header flex items-center justify-between bg-gray-800 text-white px-4 py-2">
+    <div class="flex items-center gap-3">
+      {# 言語アイコン #}
+      <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+        <path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+      </svg>
+      
+      {# キャプションまたは言語名 #}
+      {% if self.caption %}
+        <span class="text-sm font-medium">{{ self.caption }}</span>
+        <span class="text-xs text-gray-400">
+          ({{ self.language|upper }})
+        </span>
+      {% else %}
+        <span class="text-sm font-medium">{{ self.language|upper }}</span>
+      {% endif %}
+    </div>
+    
+    {# コピーボタン #}
+    <button 
+      class="copy-button flex items-center gap-1 text-xs text-gray-300 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-accent/50 rounded px-2 py-1"
+      onclick="copyCode(this)"
+      aria-label="コードをコピー">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+      </svg>
+      <span class="copy-text">コピー</span>
+    </button>
+  </div>
+  
+  {# コードコンテンツ #}
+  <div class="code-content bg-gray-900 overflow-x-auto">
+    <pre class="text-sm leading-relaxed p-4 m-0"><code class="language-{{ self.language }}" style="color: #e5e7eb;">{{ self.code }}</code></pre>
+  </div>
+</div>
+
+{# コピー機能のJavaScript #}
+<script>
+function copyCode(button) {
+  const codeBlock = button.closest('.code-block');
+  const code = codeBlock.querySelector('code').textContent;
+  
+  // クリップボードにコピー
+  navigator.clipboard.writeText(code).then(() => {
+    // ボタンテキスト変更
+    const copyText = button.querySelector('.copy-text');
+    const originalText = copyText.textContent;
+    copyText.textContent = 'コピーしました！';
+    
+    // 2秒後に元に戻す
+    setTimeout(() => {
+      copyText.textContent = originalText;
+    }, 2000);
+  }).catch(err => {
+    console.error('コピーに失敗しました:', err);
+    alert('コピーに失敗しました。ブラウザの設定をご確認ください。');
+  });
+}
+</script>

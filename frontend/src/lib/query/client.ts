@@ -32,4 +32,5 @@ export const staleTimeConfig = {
   ranking: 10 * 60 * 1000,       // ランキング: 10分（頻繁に更新される）
   blog: 30 * 60 * 1000,          // ブログ: 30分
   tags: 24 * 60 * 60 * 1000,     // タグ: 24時間（ほとんど変更されない）
+  brokers: 60 * 60 * 1000,       // ASP証券会社: 1時間
 } as const;

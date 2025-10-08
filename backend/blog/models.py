@@ -1,4 +1,9 @@
+from typing import TYPE_CHECKING
+
 from django.db import models
+
+if TYPE_CHECKING:
+    from django.http import HttpRequest
 from django import forms
 from django.utils.text import slugify
 from wagtail.snippets.models import register_snippet
@@ -8,6 +13,7 @@ from wagtail.admin.panels import FieldPanel
 # Wagtailページモデル関連
 from wagtail.models import Page
 from wagtail.fields import StreamField
+from wagtail_headless_preview.models import HeadlessPreviewMixin
 from wagtail import blocks
 from wagtail.images.blocks import ImageChooserBlock
 from wagtail.embeds.blocks import EmbedBlock
@@ -15,7 +21,7 @@ from wagtail.contrib.table_block.blocks import TableBlock
 
 # カスタムブロックのインポート
 from .blocks import (
-    ASPComparisonBlock,
+    ComparisonTableBlock,
     ASPCTABlock,
     ASPBannerBlock,
     RelatedToolsBlock,
@@ -157,8 +163,8 @@ class BlogIndexPage(Page):
         return context
 
 
-class BlogPage(Page):
-    """ブログ記事ページ"""
+class BlogPage(HeadlessPreviewMixin, Page):
+    """ブログ記事ページ（Headless Preview対応）"""
     
     # ========================================
     # 基本情報
@@ -239,8 +245,8 @@ class BlogPage(Page):
         # コード表示
         ('code', CodeBlock()),
         
-        # ASPアフィリエイトブロック（収益化の核心）
-        ('asp_comparison', ASPComparisonBlock()),
+        # 比較表ブロック（収益化の核心）
+        ('comparison_table', ComparisonTableBlock()),
         ('asp_cta', ASPCTABlock()),
         ('asp_banner', ASPBannerBlock()),
         
@@ -321,3 +327,44 @@ class BlogPage(Page):
     
     def __str__(self):
         return self.title
+    
+    # ========================================
+    # Headless Preview設定
+    # ========================================
+    
+    def get_client_root_url(self, request: "HttpRequest") -> str:
+        """
+        Next.jsフロントエンドのルートURL
+        開発環境: http://localhost:3000
+        本番環境: 環境変数で切り替え可能
+        
+        Args:
+            request: HTTPリクエストオブジェクト
+        
+        Returns:
+            フロントエンドのルートURL
+        """
+        import os
+        return os.getenv('NEXT_PUBLIC_URL', 'http://localhost:3000')
+    
+    def get_preview_url(self, request: "HttpRequest", token: str) -> str:
+        """
+        プレビューURL生成
+        Next.jsのプレビューAPIにリダイレクト
+        
+        Args:
+            request: HTTPリクエストオブジェクト
+            token: wagtail-headless-previewが生成したトークン
+        
+        Returns:
+            Next.jsプレビューAPIのURL（トークン付き）
+        """
+        from django.utils.http import urlencode
+        
+        client_url = self.get_client_root_url(request)
+        params = {
+            "content_type": self.get_content_type_str(),
+            "token": token,
+            "slug": self.slug
+        }
+        return f"{client_url}/api/preview?{urlencode(params)}"

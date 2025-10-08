@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BlogPost } from '@/types';
@@ -12,7 +13,6 @@ interface BlogCardProps {
   showExcerpt?: boolean;
   showImage?: boolean;
   showAuthor?: boolean;
-  onClick?: () => void;
 }
 
 export function BlogCard({ 
@@ -21,7 +21,6 @@ export function BlogCard({
   showExcerpt = true,
   showImage = true,
   showAuthor = true,
-  onClick 
 }: BlogCardProps) {
   const isHorizontal = variant === 'horizontal';
 
@@ -96,15 +95,15 @@ export function BlogCard({
   };
 
   return (
-    <Card 
-      className={cn(
-        'group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1',
-        'border-border hover:border-primary/50',
-        isHorizontal ? 'flex flex-row' : 'flex flex-col',
-        'h-full overflow-hidden'
-      )}
-      onClick={onClick}
-    >
+    <Link href={`/blog/${post.slug}`} className="block">
+      <Card 
+        className={cn(
+          'group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1',
+          'border-border hover:border-primary/50',
+          isHorizontal ? 'flex flex-row' : 'flex flex-col',
+          'h-full overflow-hidden'
+        )}
+      >
       {/* アイキャッチ画像 */}
       {showImage && (
         <div className={cn(
@@ -213,5 +212,6 @@ export function BlogCard({
         </CardContent>
       </div>
     </Card>
+    </Link>
   );
 }

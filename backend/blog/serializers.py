@@ -68,26 +68,17 @@ class BlogPageSerializer(serializers.Serializer):
         }
     
     def get_body(self, obj):
-        """StreamFieldをJSONに変換"""
-        result = []
-        for block in obj.body:
-            value = block.value
-            # RichTextの場合はHTML文字列に変換
-            if hasattr(value, 'source'):
-                value = value.source
-            # オブジェクトの場合はget_api_representation()を試す
-            elif hasattr(value, 'get_api_representation'):
-                value = value.get_api_representation()
-            # プリミティブ型以外はstr()で変換
-            elif not isinstance(value, (str, int, float, bool, list, dict, type(None))):
-                value = str(value)
-            
-            result.append({
-                'type': block.block_type,
-                'value': value,
-                'id': str(block.id) if hasattr(block, 'id') else None
-            })
-        return result
+        """StreamFieldをHTML文字列として返す（一時的な実装）"""
+        # TODO Phase 8: StreamFieldの適切なJSON変換を実装
+        try:
+            # StreamFieldをHTML文字列に変換
+            return str(obj.body)
+        except Exception as e:
+            # エラーが発生した場合は空文字列を返す
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error serializing body for {obj.slug}: {e}")
+            return ""
 
 
 class BlogPageListSerializer(serializers.Serializer):

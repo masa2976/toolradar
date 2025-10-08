@@ -5,19 +5,18 @@ import { Badge } from '@/components/ui/badge';
 import { Tool } from '@/types';
 import { ExternalLink, Tag, DollarSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 interface ToolCardProps {
   tool: Tool;
   variant?: 'compact' | 'detailed';
   showRibbon?: boolean;
-  onClick?: () => void;
 }
 
 export function ToolCard({ 
   tool, 
   variant = 'detailed', 
-  showRibbon = true,
-  onClick 
+  showRibbon = true 
 }: ToolCardProps) {
   const isCompact = variant === 'compact';
 
@@ -66,20 +65,23 @@ export function ToolCard({
   };
 
   return (
-    <Card 
-      className={cn(
-        'group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1',
-        'border-border hover:border-primary/50',
-        isCompact ? 'h-auto' : 'h-full'
-      )}
-      onClick={onClick}
+    <Link 
+      href={`/tools/${tool.slug}`}
+      className="block"
     >
+      <Card 
+        className={cn(
+          'group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1',
+          'border-border hover:border-primary/50',
+          isCompact ? 'h-auto' : 'h-full'
+        )}
+      >
       {/* サムネイル画像 */}
       <div className="relative w-full aspect-video overflow-hidden rounded-t-lg bg-muted">
         <img 
           src={tool.image_url || '/placeholder-tool.png'} 
           alt={tool.name}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
         />
         
         {/* リボン表示 */}
@@ -167,5 +169,6 @@ export function ToolCard({
         </CardContent>
       )}
     </Card>
+    </Link>
   );
 }

@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     
     # Wagtail apps
     'wagtail.contrib.forms',
+    'wagtail.api.v2',  # Wagtail API for headless preview
     'wagtail.contrib.redirects',
     'wagtail.contrib.table_block',  # TableBlock support
     'wagtail.embeds',
@@ -63,6 +64,7 @@ INSTALLED_APPS = [
     'wagtail_modeladmin',
     'wagtailcache',
     'wagtailmetadata',
+    'wagtail_headless_preview',  # Headless preview support
     
     # Development tools
     'django_extensions',
@@ -72,6 +74,7 @@ INSTALLED_APPS = [
     'tools',
     'blog',
     'tags',
+    'apps.asp',
 ]
 
 MIDDLEWARE = [
@@ -229,6 +232,21 @@ WAGTAILADMIN_RICH_TEXT_EDITORS = {
             ]
         }
     }
+}
+
+# ========================================
+# Wagtail Headless Preview Settings
+# ========================================
+
+WAGTAIL_HEADLESS_PREVIEW = {
+    # Next.jsフロントエンドのURL
+    "CLIENT_URLS": {
+        "default": os.getenv('NEXT_PUBLIC_URL', 'http://localhost:3000'),
+    },
+    # プレビュー時はリダイレクト（Wagtail 7.1+推奨）
+    "REDIRECT_ON_PREVIEW": True,
+    # トレーリングスラッシュの強制を無効化
+    "ENFORCE_TRAILING_SLASH": False,
 }
 
 

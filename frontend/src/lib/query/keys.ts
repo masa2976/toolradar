@@ -36,4 +36,9 @@ export const queryKeys = {
     all: ['tags'] as const,
     list: (params?: Record<string, any>) => [...queryKeys.tags.all, params] as const,
   },
+  
+  // ASPアフィリエイト関連
+  brokers: {
+    all: ['brokers'] as const,
+  },
 } as const;

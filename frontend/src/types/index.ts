@@ -122,6 +122,27 @@ export interface TagsParams {
   category?: string;
 }
 
+// ASPアフィリエイト関連
+// ============================================
+
+export interface Broker {
+  id: number;
+  name: string;
+  logo: string;
+  features: string[];
+  bonus: string;
+  cta_url: string;
+  tracking_id: string;
+  rank: number;
+}
+
+export interface BrokersResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Broker[];
+}
+
 // エラー
 // ============================================
 

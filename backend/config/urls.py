@@ -13,6 +13,9 @@ from wagtail.documents import urls as wagtaildocs_urls
 # DRF Spectacular (Swagger UI)
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+# Wagtail API (for headless preview)
+from .api import api_router
+
 urlpatterns = [
     # Django Admin
     path('admin/', admin.site.urls),
@@ -27,10 +30,15 @@ urlpatterns = [
     path('api/', include('tools.urls')),      # Tools API
     path('api/', include('blog.urls')),       # Blog API
     path('api/', include('tags.urls')),       # Tags API
+    path('api/', include('apps.asp.urls')),   # ASP API
     
     # API Schema & Swagger UI
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    
+    # Wagtail API v2 (Headless Preview)
+    # 注意: Wagtail Pagesルートの前に配置する必要あり
+    path('api/v2/', api_router.urls),
     
     # Wagtail Pages (最後に配置)
     path('', include(wagtail_urls)),
