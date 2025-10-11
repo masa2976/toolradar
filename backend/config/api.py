@@ -70,5 +70,8 @@ class PagePreviewAPIViewSet(PagesAPIViewSet):
         return page
 
 
+# 通常のPages APIエンドポイントを登録（StandardPage等のページ取得用）
+api_router.register_endpoint("pages", PagesAPIViewSet)
+
 # PagePreviewAPIViewSetをAPIルーターに登録
 api_router.register_endpoint("page_preview", PagePreviewAPIViewSet)

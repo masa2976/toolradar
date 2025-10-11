@@ -16,7 +16,7 @@ export function Sidebar({ onFilterChange }: SidebarProps) {
 
   return (
     <aside className="space-y-6">
-      {/* フィルターパネル */}
+      {/* 1. フィルターパネル（最優先） */}
       <div className="rounded-lg border bg-white p-6 shadow-sm">
         <h3 className="mb-4 text-lg font-semibold text-gray-900">
           絞り込み検索
@@ -24,10 +24,7 @@ export function Sidebar({ onFilterChange }: SidebarProps) {
         <FilterPanel onFilterChange={onFilterChange ?? (() => {})} />
       </div>
 
-      {/* ASPウィジェット（収益源） */}
-      <ASPWidget />
-
-      {/* 人気ランキング TOP5 */}
+      {/* 2. 人気ランキング TOP5（社会的証明） */}
       <div className="rounded-lg border bg-white p-6 shadow-sm">
         <div className="mb-4 flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-blue-600" />
@@ -53,15 +50,8 @@ export function Sidebar({ onFilterChange }: SidebarProps) {
         )}
       </div>
 
-      {/* 注目記事（将来実装） */}
-      <div className="rounded-lg border bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-lg font-semibold text-gray-900">
-          注目記事
-        </h3>
-        <p className="text-sm text-gray-500">
-          ブログ機能実装後に表示されます
-        </p>
-      </div>
+      {/* 3. ASPウィジェット（収益源） */}
+      <ASPWidget />
     </aside>
   )
 }

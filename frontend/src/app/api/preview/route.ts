@@ -91,13 +91,31 @@ export async function GET(request: NextRequest) {
   draft.enable();
 
   // ========================================
-  // 4. ブログ記事ページへリダイレクト
+  // 4. ページタイプに応じてリダイレクト
   // ========================================
   // 日本語slugを適切にエンコード
   const encodedSlug = encodeURIComponent(slug);
-  const redirectUrl = `/blog/${encodedSlug}`;
   
-  console.log('Redirecting to preview:', redirectUrl);
+  // content_typeで分岐
+  let redirectUrl: string;
+  
+  if (contentType === 'blog.blogpage') {
+    // BlogPage → /blog/{slug}
+    redirectUrl = `/blog/${encodedSlug}`;
+  } else if (contentType === 'blog.standardpage') {
+    // StandardPage → /{slug}
+    redirectUrl = `/${encodedSlug}`;
+  } else {
+    // その他のページタイプ（将来の拡張用）
+    console.warn('Unknown content type:', contentType);
+    redirectUrl = `/${encodedSlug}`;
+  }
+  
+  console.log('Redirecting to preview:', {
+    contentType,
+    slug,
+    redirectUrl,
+  });
   
   redirect(redirectUrl);
 }

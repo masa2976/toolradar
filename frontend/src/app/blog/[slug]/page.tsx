@@ -8,6 +8,7 @@ import { draftMode } from 'next/headers';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Eye, User, AlertCircle, X } from 'lucide-react';
 import Link from 'next/link';
+import { StreamFieldRenderer } from '@/components/blog/StreamFieldRenderer';
 
 // ============================================
 // メタデータ生成
@@ -164,18 +165,25 @@ function BlogPostContent({ post }: { post: any }) {
       
       {/* StreamFieldブロックのレンダリング */}
       {post.body ? (
-        <div 
-          dangerouslySetInnerHTML={{ __html: post.body }}
-          className="prose-headings:font-bold prose-a:text-primary prose-a:underline prose-code:bg-muted prose-code:text-accent-foreground prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-mono prose-pre:bg-muted prose-pre:text-foreground prose-pre:border prose-pre:border-border prose-pre:p-4 prose-pre:rounded-lg prose-pre:overflow-x-auto prose-mark:bg-warning/20 prose-mark:text-warning-foreground prose-strong:text-foreground prose-th:text-foreground prose-td:text-foreground prose-li:text-foreground"
-        />
+        Array.isArray(post.body) ? (
+          // ✅ 新実装: StreamFieldRenderer（型安全・XSS対策済み）
+          <div className="prose prose-lg max-w-none prose-headings:font-bold prose-a:text-primary prose-a:underline prose-code:bg-muted prose-code:text-accent-foreground prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-mono prose-pre:bg-muted prose-pre:text-foreground prose-pre:border prose-pre:border-border prose-pre:p-4 prose-pre:rounded-lg prose-pre:overflow-x-auto prose-mark:bg-warning/20 prose-mark:text-warning-foreground prose-strong:text-foreground prose-th:text-foreground prose-td:text-foreground prose-li:text-foreground">
+            <StreamFieldRenderer blocks={post.body} />
+          </div>
+        ) : (
+          // ⚠️ 後方互換性: HTMLとして返された場合（非推奨）
+          <div 
+            dangerouslySetInnerHTML={{ __html: post.body }}
+            className="prose-headings:font-bold prose-a:text-primary prose-a:underline prose-code:bg-muted prose-code:text-accent-foreground prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-mono prose-pre:bg-muted prose-pre:text-foreground prose-pre:border prose-pre:border-border prose-pre:p-4 prose-pre:rounded-lg prose-pre:overflow-x-auto prose-mark:bg-warning/20 prose-mark:text-warning-foreground prose-strong:text-foreground prose-th:text-foreground prose-td:text-foreground prose-li:text-foreground"
+          />
+        )
       ) : (
         <>
           <p className="text-foreground">記事本文がここに表示されます。</p>
           
-          {/* TODO: StreamFieldブロックレンダラーの実装 */}
-          <div className="bg-warning/10 border border-warning/30 rounded p-4 my-6">
-            <p className="text-sm text-warning-foreground">
-              <strong>開発中:</strong> StreamFieldブロックのレンダリング機能は次のステップで実装します。
+          <div className="bg-muted border border-border rounded p-4 my-6">
+            <p className="text-sm text-muted-foreground">
+              記事本文が取得できませんでした。
             </p>
           </div>
         </>

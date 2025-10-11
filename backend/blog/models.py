@@ -12,7 +12,8 @@ from wagtail.admin.panels import FieldPanel
 
 # Wagtailページモデル関連
 from wagtail.models import Page
-from wagtail.fields import StreamField
+from wagtail.fields import StreamField, RichTextField
+from wagtail.api import APIField
 from wagtail_headless_preview.models import HeadlessPreviewMixin
 from wagtail import blocks
 from wagtail.images.blocks import ImageChooserBlock
@@ -22,8 +23,8 @@ from wagtail.contrib.table_block.blocks import TableBlock
 # カスタムブロックのインポート
 from .blocks import (
     ComparisonTableBlock,
-    ASPCTABlock,
-    ASPBannerBlock,
+    CTABlock,
+    BannerBlock,
     RelatedToolsBlock,
     CodeBlock,
     HeadingBlock,
@@ -247,8 +248,8 @@ class BlogPage(HeadlessPreviewMixin, Page):
         
         # 比較表ブロック（収益化の核心）
         ('comparison_table', ComparisonTableBlock()),
-        ('asp_cta', ASPCTABlock()),
-        ('asp_banner', ASPBannerBlock()),
+        ('cta', CTABlock()),
+        ('banner', BannerBlock()),
         
         # 関連コンテンツ
         ('related_tools', RelatedToolsBlock()),
@@ -324,6 +325,92 @@ class BlogPage(HeadlessPreviewMixin, Page):
     class Meta:
         verbose_name = "ブログ記事"
         verbose_name_plural = "ブログ記事"
+    
+    def __str__(self):
+        return self.title
+    
+    # ========================================
+    # Headless Preview設定
+    # ========================================
+    
+    def get_client_root_url(self, request: "HttpRequest") -> str:
+        """
+        Next.jsフロントエンドのルートURL
+        開発環境: http://localhost:3000
+        本番環境: 環境変数で切り替え可能
+        
+        Args:
+            request: HTTPリクエストオブジェクト
+        
+        Returns:
+            フロントエンドのルートURL
+        """
+        import os
+        return os.getenv('NEXT_PUBLIC_URL', 'http://localhost:3000')
+    
+    def get_preview_url(self, request: "HttpRequest", token: str) -> str:
+        """
+        プレビューURL生成
+        Next.jsのプレビューAPIにリダイレクト
+        
+        Args:
+            request: HTTPリクエストオブジェクト
+            token: wagtail-headless-previewが生成したトークン
+        
+        Returns:
+            Next.jsプレビューAPIのURL（トークン付き）
+        """
+        from django.utils.http import urlencode
+        
+        client_url = self.get_client_root_url(request)
+        params = {
+            "content_type": self.get_content_type_str(),
+            "token": token,
+            "slug": self.slug
+        }
+        return f"{client_url}/api/preview?{urlencode(params)}"
+
+
+# ========================================
+# 静的ページモデル
+# ========================================
+
+class StandardPage(HeadlessPreviewMixin, Page):
+    """
+    静的ページモデル（Headless Preview対応）
+    
+    プライバシーポリシー、利用規約、About、お問い合わせなどに使用
+    """
+    
+    # 本文（リッチテキスト）
+    body = RichTextField(
+        "本文",
+        blank=True,
+        help_text="ページの本文を入力してください"
+    )
+    
+    # Wagtail管理画面の設定
+    content_panels = Page.content_panels + [
+        FieldPanel('body'),
+    ]
+    
+    # SEO設定（Wagtail標準のSEOフィールド）
+    promote_panels = Page.promote_panels
+
+    # Wagtail API公開設定（カスタムシリアライザー使用）
+    api_fields = [
+        APIField('body', serializer='blog.api_serializers.RichTextSerializer'),
+        APIField('seo_title'),
+        APIField('search_description'),
+    ]
+    
+    # 親ページの制限（ルート直下のみ）
+    parent_page_types = ['wagtailcore.Page']
+    subpage_types = []
+    
+    class Meta:
+        verbose_name = "静的ページ"
+        verbose_name_plural = "静的ページ"
     
     def __str__(self):
         return self.title

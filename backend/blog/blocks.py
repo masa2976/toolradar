@@ -140,8 +140,8 @@ class ComparisonTableBlock(blocks.StructBlock):
         label = '比較表'
 
 
-class ASPCTABlock(blocks.StructBlock):
-    """アフィリエイトCTAボタンブロック"""
+class CTABlock(blocks.StructBlock):
+    """CTAボタンブロック"""
     
     heading = blocks.CharBlock(
         label="見出し",
@@ -198,14 +198,14 @@ class ASPCTABlock(blocks.StructBlock):
     )
     
     class Meta:
-        template = 'blocks/asp_cta.html'
+        template = 'blocks/cta.html'
         icon = 'link'
-        label = 'ASP CTAボタン'
+        label = 'CTAボタン'
 
 
-class ASPBannerBlock(blocks.StructBlock):
+class BannerBlock(blocks.StructBlock):
     """
-    アフィリエイトバナー広告ブロック
+    バナー広告ブロック
     
     A8.net、もしもアフィリエイト、バリューコマース等のASPから提供される
     バナー広告のHTMLコードをそのまま貼り付けて使用します。
@@ -222,9 +222,9 @@ class ASPBannerBlock(blocks.StructBlock):
     )
     
     class Meta:
-        template = 'blocks/asp_banner.html'
+        template = 'blocks/banner.html'
         icon = 'code'
-        label = 'ASPバナー広告'
+        label = 'バナー広告'
 
 
 class HeadingBlock(blocks.StructBlock):

@@ -68,17 +68,106 @@ class BlogPageSerializer(serializers.Serializer):
         }
     
     def get_body(self, obj):
-        """StreamFieldをHTML文字列として返す（一時的な実装）"""
-        # TODO Phase 8: StreamFieldの適切なJSON変換を実装
+        """StreamFieldをJSON形式で返す（comparison_tableブロックは変換）"""
         try:
-            # StreamFieldをHTML文字列に変換
-            return str(obj.body)
+            # get_prep_value()でベースとなるJSONを取得
+            blocks = obj.body.get_prep_value()
+            
+            # 各ブロックを処理
+            result = []
+            for block in blocks:
+                block_type = block.get('type')
+                
+                # comparison_tableブロックの場合のみ変換
+                if block_type == 'comparison_table':
+                    transformed_block = self._transform_comparison_table_block(block)
+                    result.append(transformed_block)
+                else:
+                    # 他のブロックはそのまま
+                    result.append(block)
+            
+            return result
+            
         except Exception as e:
-            # エラーが発生した場合は空文字列を返す
+            # エラーが発生した場合は空リストを返す
             import logging
             logger = logging.getLogger(__name__)
             logger.error(f"Error serializing body for {obj.slug}: {e}")
-            return ""
+            return []
+
+    def _transform_comparison_table_block(self, block):
+        """
+        comparison_tableブロックをフロントエンド用の形式に変換
+        
+        変換内容:
+        - items[] → brokers[] に変更
+        - items[].value.features[] (オブジェクト配列) → brokers[].features[] (文字列配列)
+        - items[].value のネストを解除
+        - rating を数値型に変換
+        """
+        try:
+            value = block.get('value', {})
+            items = value.get('items', [])
+            
+            # itemsをbrokersに変換
+            brokers = []
+            for item in items:
+                item_value = item.get('value', {})
+                
+                # features配列を文字列配列に変換
+                features_raw = item_value.get('features', [])
+                features = [
+                    f.get('value', '') if isinstance(f, dict) else str(f)
+                    for f in features_raw
+                ]
+                
+                # rating を float に変換（文字列の場合）
+                rating = item_value.get('rating', 0)
+                if isinstance(rating, str):
+                    try:
+                        rating = float(rating)
+                    except (ValueError, TypeError):
+                        rating = 0.0
+                
+                # brokerオブジェクトを構築
+                broker = {
+                    'name': item_value.get('name', ''),
+                    'rating': rating,
+                    'features': features,
+                    'cta_url': item_value.get('cta_url', ''),
+                    'cta_text': item_value.get('cta_text', '詳細を見る'),
+                }
+                
+                # オプションフィールド（存在する場合のみ追加）
+                if item_value.get('image'):
+                    broker['logo'] = item_value['image']
+                if item_value.get('highlight_text'):
+                    broker['bonus'] = item_value['highlight_text']
+                if item_value.get('price_info'):
+                    broker['cost'] = item_value['price_info']
+                if item_value.get('tracking_id'):
+                    broker['tracking_id'] = item_value['tracking_id']
+                
+                brokers.append(broker)
+            
+            # 変換後のブロック
+            return {
+                'id': block.get('id'),
+                'type': 'comparison_table',
+                'value': {
+                    'title': value.get('title', ''),
+                    'description': value.get('description'),
+                    'brokers': brokers,
+                    'layout': value.get('layout', 'ranking'),
+                }
+            }
+            
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error transforming comparison_table block: {e}")
+            # エラー時は元のブロックをそのまま返す
+            return block
 
 
 class BlogPageListSerializer(serializers.Serializer):

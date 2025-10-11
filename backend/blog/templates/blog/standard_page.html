@@ -1,0 +1,74 @@
+{% extends "blog/base.html" %}
+{% load wagtailcore_tags %}
+
+{% block title %}{{ page.title }} - ToolRadar{% endblock %}
+
+{% block content %}
+<article class="standard-page" style="max-width: 800px; margin: 0 auto; padding: 2rem 1rem;">
+    <h1 style="font-size: 2.25rem; font-weight: 700; margin-bottom: 2rem; color: #111827; border-bottom: 2px solid #2563EB; padding-bottom: 1rem;">
+        {{ page.title }}
+    </h1>
+    
+    <div class="content" style="font-size: 1rem; line-height: 1.75; color: #1F2937;">
+        <!-- h2見出し -->
+        <style>
+            .content h2 {
+                font-size: 1.5rem;
+                font-weight: 600;
+                margin-top: 2rem;
+                margin-bottom: 1rem;
+                color: #1F2937;
+                border-left: 4px solid #2563EB;
+                padding-left: 1rem;
+            }
+            
+            .content h3 {
+                font-size: 1.25rem;
+                font-weight: 600;
+                margin-top: 1.5rem;
+                margin-bottom: 0.75rem;
+                color: #374151;
+            }
+            
+            .content p {
+                margin-bottom: 1rem;
+                line-height: 1.75;
+            }
+            
+            .content ul, .content ol {
+                margin-left: 1.5rem;
+                margin-bottom: 1rem;
+            }
+            
+            .content li {
+                margin-bottom: 0.5rem;
+                line-height: 1.75;
+            }
+            
+            .content a {
+                color: #2563EB;
+                text-decoration: underline;
+            }
+            
+            .content a:hover {
+                color: #1E40AF;
+            }
+            
+            .content strong {
+                font-weight: 600;
+                color: #111827;
+            }
+            
+            .content br {
+                margin-bottom: 0.5rem;
+            }
+        </style>
+        
+        {{ page.body|safe }}
+    </div>
+    
+    <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #E5E7EB; text-align: center; color: #6B7280; font-size: 0.875rem;">
+        最終更新日: {{ page.last_published_at|date:"Y年m月d日" }}
+    </div>
+</article>
+{% endblock %}
