@@ -1,44 +1,88 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ToolFeed } from './ToolFeed'
+import { CategorySection } from '@/components/ui/CategorySection'
+import { IconFeatureCard } from '@/components/ui/IconFeatureCard'
+import { ImageOverlayCard } from '@/components/ui/ImageOverlayCard'
 import { BlogFeed } from './BlogFeed'
-import { RankingFeed } from './RankingFeed'
-
-type FeedTab = 'tools' | 'ranking'
+import {
+  platforms,
+  toolTypes,
+  technicalIndicators,
+  tradeStyles,
+  priceTypes,
+} from '@/lib/data/categories'
 
 export function MainFeed() {
-  const [activeTab, setActiveTab] = useState<FeedTab>('tools')
-
   return (
-    <div className="space-y-8">
-      {/* ツール系タブ（同じカテゴリ） */}
+    <div className="space-y-10">
+      {/* 1. プラットフォーム（3個） - SimpleGradientCard */}
+      <CategorySection 
+        title="プラットフォーム別に探す" 
+        gridCols="grid-cols-3"
+        items={platforms}
+      />
+
+      {/* 2. ツールタイプ（4個） - IconFeatureCard */}
       <section>
-        <h2 className="text-2xl font-bold mb-4">投資ツール</h2>
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as FeedTab)}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="tools">新着ツール</TabsTrigger>
-            <TabsTrigger value="ranking">週間ランキング</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="tools" className="mt-6">
-            <ToolFeed />
-          </TabsContent>
-
-          <TabsContent value="ranking" className="mt-6">
-            <RankingFeed />
-          </TabsContent>
-        </Tabs>
+        <div className="mb-4 text-center">
+          <h2 className="text-2xl font-bold text-gray-900">
+            ツールタイプから探す
+          </h2>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+          {toolTypes.map((item) => (
+            <IconFeatureCard
+              key={item.label}
+              label={item.label}
+              href={item.href}
+              icon={item.icon}
+              description={item.description || ''}
+            />
+          ))}
+        </div>
       </section>
 
-      {/* ブログセクション（独立） */}
+      {/* 3. テクニカル指標（5個） - SimpleGradientCard */}
+      <CategorySection
+        title="テクニカル指標から探す"
+        gridCols="grid-cols-3 sm:grid-cols-5"
+        items={technicalIndicators}
+      />
+
+      {/* 4. トレードスタイル（4個） - ImageOverlayCard */}
+      <section>
+        <div className="mb-4 text-center">
+          <h2 className="text-2xl font-bold text-gray-900">
+            トレードスタイルから探す
+          </h2>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+          {tradeStyles.map((item) => (
+            <ImageOverlayCard
+              key={item.label}
+              label={item.label}
+              href={item.href}
+              description={item.description || ''}
+              backgroundImage={item.backgroundImage || ''}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* 5. 価格帯（3個） - SimpleGradientCard */}
+      <CategorySection 
+        title="価格帯から探す" 
+        gridCols="grid-cols-3"
+        items={priceTypes}
+      />
+
+      {/* 6. ブログセクション */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold">新着記事</h2>
-          <Link 
-            href="/blog" 
+          <h2 className="text-2xl font-bold text-gray-900">新着記事</h2>
+          <Link
+            href="/blog"
             className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline transition-colors"
           >
             すべて見る →
