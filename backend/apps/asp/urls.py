@@ -1,9 +1,9 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import BrokerViewSet
+from .views import ASPAdViewSet
 
 router = DefaultRouter()
-router.register(r'brokers', BrokerViewSet, basename='broker')
+router.register(r'ads', ASPAdViewSet, basename='aspad')
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -12,14 +12,14 @@ export default function HomePage() {
         <HeroSection />
 
         {/* コンテンツエリア */}
-        <div className="container mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-            {/* サイドバー（3/12） - 左側 */}
-            <div className="lg:col-span-3">
+        <div className="container mx-auto px-4 py-6">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+            {/* サイドバー（3/12） - 左側 - デスクトップのみ表示 */}
+            <div className="hidden lg:block lg:col-span-3">
               <Sidebar />
             </div>
 
-            {/* メインコンテンツ（9/12） - 右側 */}
+            {/* メインコンテンツ（9/12） - 右側 - モバイルは全幅 */}
             <div className="lg:col-span-9">
               <MainFeed />
             </div>

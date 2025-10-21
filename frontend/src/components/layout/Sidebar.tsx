@@ -1,57 +1,62 @@
 'use client'
 
-import { FilterPanel } from '@/components/ui/FilterPanel'
 import { useWeeklyRanking } from '@/hooks/useRanking'
 import { RankingList } from '@/components/ui/RankingList'
-import { Loader2, TrendingUp } from 'lucide-react'
-import type { FilterState } from '@/components/ui/FilterPanel'
+import { PopularPostsWidget } from '@/components/ui/PopularPostsWidget'
+import { CategoryQuickLinks } from '@/components/ui/CategoryQuickLinks'
+import { PopularTagsCloud } from '@/components/ui/PopularTagsCloud'
 import { ASPWidget } from '@/components/ui/ASPWidget'
+import { Loader2, TrendingUp } from 'lucide-react'
 
 interface SidebarProps {
-  onFilterChange?: (filters: FilterState) => void
+  isMobile?: boolean
 }
 
-export function Sidebar({ onFilterChange }: SidebarProps) {
-  const { data: rankingData, isPending } = useWeeklyRanking()
+export function Sidebar({ isMobile = false }: SidebarProps) {
+  // モバイル時はランキングを5件、デスクトップは10件
+  const rankingLimit = isMobile ? 5 : 10
+  const { data: rankingData, isPending } = useWeeklyRanking({ limit: rankingLimit })
 
   return (
-    <aside className="space-y-6">
-      {/* 1. フィルターパネル（最優先） */}
-      <div className="rounded-lg border bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-lg font-semibold text-gray-900">
-          絞り込み検索
-        </h3>
-        <FilterPanel onFilterChange={onFilterChange ?? (() => {})} />
-      </div>
-
-      {/* 2. 人気ランキング TOP5（社会的証明） */}
-      <div className="rounded-lg border bg-white p-6 shadow-sm">
-        <div className="mb-4 flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-blue-600" />
+    <aside className={`space-y-6 ${!isMobile ? 'lg:sticky lg:top-20 lg:h-[calc(100vh-5rem)] lg:overflow-y-auto lg:pr-2' : ''}`}>
+      {/* 1. 週間人気ランキング（モバイル: TOP5 / デスクトップ: TOP10） */}
+      <div className="rounded-lg border bg-white p-4 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingUp className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-semibold text-gray-900">
-            人気ランキング
+            {isMobile ? '週間人気TOP5' : '週間人気TOP10'}
           </h3>
         </div>
         
         {isPending ? (
           <div className="flex justify-center py-4">
-            <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : rankingData?.rankings && rankingData.rankings.length > 0 ? (
           <RankingList 
             rankings={rankingData.rankings} 
             variant="compact" 
-            limit={5}
+            limit={rankingLimit}
+            showScore={false}
           />
         ) : (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             ランキングデータがありません
           </p>
         )}
       </div>
 
-      {/* 3. ASPウィジェット（収益源） */}
-      <ASPWidget />
+      {/* 2. ASPウィジェット（デスクトップのみ、ランキング直後、PR表記済み） */}
+      {!isMobile && <ASPWidget />}
+
+      {/* 3. カテゴリクイックリンク（モバイル・デスクトップ共通） */}
+      <CategoryQuickLinks />
+
+      {/* 4. 人気タグクラウド（モバイル・デスクトップ共通） */}
+      <PopularTagsCloud limit={isMobile ? 15 : 20} />
+
+      {/* 5. 人気記事（デスクトップのみ） */}
+      {!isMobile && <PopularPostsWidget limit={5} />}
     </aside>
   )
 }

@@ -61,9 +61,9 @@ export function RankingList({
 
   // 順位バッジの色（1-3位は特別）
   const getRankBadgeColor = (rank: number) => {
-    if (rank === 1) return 'bg-gradient-to-br from-yellow-400 to-yellow-600 dark:from-yellow-500 dark:to-yellow-700 text-white shadow-lg';
-    if (rank === 2) return 'bg-gradient-to-br from-gray-300 to-gray-500 dark:from-gray-400 dark:to-gray-600 text-white shadow-lg';
-    if (rank === 3) return 'bg-gradient-to-br from-orange-400 to-orange-600 dark:from-orange-500 dark:to-orange-700 text-white shadow-lg';
+    if (rank === 1) return 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white shadow-lg';
+    if (rank === 2) return 'bg-gradient-to-br from-gray-300 to-gray-500 text-white shadow-lg';
+    if (rank === 3) return 'bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-lg';
     return 'bg-muted text-foreground';
   };
 
@@ -87,7 +87,7 @@ export function RankingList({
             )}
           >
             <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 overflow-hidden">
                 {/* 順位バッジ */}
                 <div className="flex-shrink-0 self-start sm:self-center">
                   <div 
@@ -102,7 +102,7 @@ export function RankingList({
                 </div>
 
                 {/* ツール情報 */}
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 overflow-hidden">
                   {/* タイトル行 */}
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className={cn(

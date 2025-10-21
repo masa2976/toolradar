@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { ToolsParams } from '@/types';
+import { ASPWidget } from '@/components/ui/ASPWidget';
 
 // ============================================
 // ツール一覧ページ
@@ -98,8 +99,14 @@ export default function ToolsListPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* 左サイドバー（デスクトップ） */}
           <aside className="hidden lg:block lg:col-span-3">
-            <div className="sticky top-20">
+            <div className="sticky top-20 space-y-6">
               <FilterPanel onFilterChange={handleFilterChange} />
+              
+              {/* ASPウィジェット */}
+              <ASPWidget 
+                placement="sidebar-top"
+                className="mt-6"
+              />
             </div>
           </aside>
           

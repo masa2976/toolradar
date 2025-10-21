@@ -5,6 +5,8 @@ import { CategorySection } from '@/components/ui/CategorySection'
 import { IconFeatureCard } from '@/components/ui/IconFeatureCard'
 import { ImageOverlayCard } from '@/components/ui/ImageOverlayCard'
 import { BlogFeed } from './BlogFeed'
+import { ASPAdSpace } from '@/components/ui/ASPAdSpace'
+import { AdSense } from '@/components/ui/AdSense'
 import {
   platforms,
   toolTypes,
@@ -50,6 +52,12 @@ export function MainFeed() {
         items={technicalIndicators}
       />
 
+      {/* ASP広告: トップページ中盤 */}
+      <ASPAdSpace 
+        placement="homepage-middle" 
+        strategy="random"
+      />
+
       {/* 4. トレードスタイル（4個） - ImageOverlayCard */}
       <section>
         <div className="mb-4 text-center">
@@ -90,6 +98,14 @@ export function MainFeed() {
         </div>
         <BlogFeed limit={3} />
       </section>
+
+      {/* ========== AdSense広告（トップページ下部） ========== */}
+      <AdSense
+        adSlot="YYYYYYYYYY"
+        adFormat="horizontal"
+        placement="homepage-bottom"
+        className="my-8"
+      />
     </div>
   )
 }

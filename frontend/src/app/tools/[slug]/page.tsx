@@ -13,6 +13,8 @@ import {
   CheckCircle2,
   XCircle
 } from 'lucide-react'
+import { ASPAdSpace } from '@/components/ui/ASPAdSpace'
+import { AdSense } from '@/components/ui/AdSense'
 
 // ============================================
 // データ取得関数（共通化）
@@ -206,13 +208,13 @@ export default async function ToolDetailPage({ params }: PageProps) {
             </Card>
           )}
 
-          {/* AdSense: 詳細ページ上部 */}
-          <div className="my-8 flex items-center justify-center border-2 border-dashed border-gray-300 bg-gray-50 p-8">
-            <div className="text-center text-muted-foreground">
-              <p className="font-medium">AdSense広告エリア (detail-top)</p>
-              <p className="mt-1 text-sm">728×90 または レスポンシブ</p>
-            </div>
-          </div>
+          {/* ========== AdSense広告（ツール詳細中盤） ========== */}
+          <AdSense
+            adSlot="XXXXXXXXXX"
+            adFormat="rectangle"
+            placement="tool-detail-middle"
+            className="my-8"
+          />
 
           {/* 関連ツールセクション（将来実装） */}
           <section className="mb-8 border-t pt-6">
@@ -230,13 +232,11 @@ export default async function ToolDetailPage({ params }: PageProps) {
             </div>
           </section>
 
-          {/* AdSense: 詳細ページ下部 */}
-          <div className="my-8 flex items-center justify-center border-2 border-dashed border-gray-300 bg-gray-50 p-8">
-            <div className="text-center text-muted-foreground">
-              <p className="font-medium">AdSense広告エリア (detail-bottom)</p>
-              <p className="mt-1 text-sm">728×90 または レスポンシブ</p>
-            </div>
-          </div>
+          {/* ========== ASP広告（ツール詳細下部） ========== */}
+          <ASPAdSpace
+            placement="tool-detail-bottom"
+            className="my-8"
+          />
         </div>
 
         {/* サイドバー */}

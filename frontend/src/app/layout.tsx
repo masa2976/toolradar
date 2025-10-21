@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Noto_Serif_JP } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 
@@ -13,9 +13,26 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const notoSerifJP = Noto_Serif_JP({
+  variable: "--font-noto-serif",
+  subsets: ["latin"],
+  weight: ["400", "600", "700"],
+  display: "swap",
+});
+
+// Google AdSense パブリッシャーID
+const adsenseClientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
+
 export const metadata: Metadata = {
   title: "ToolRadar - 投資ツールのキュレーションプラットフォーム",
   description: "MT4/MT5/TradingViewのツール検索と投資教育コンテンツ",
+  // Google AdSense 審査コード
+  // 審査申請時から配置、合格後も継続配置
+  ...(adsenseClientId && {
+    other: {
+      "google-adsense-account": adsenseClientId,
+    },
+  }),
 };
 
 export default function RootLayout({
@@ -24,23 +41,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja" suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  const theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                  document.documentElement.classList.toggle('dark', theme === 'dark');
-                } catch (e) {}
-              })()
-            `,
-          }}
-        />
-      </head>
+    <html lang="ja">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${notoSerifJP.variable} antialiased`}
       >
         <Providers>{children}</Providers>
       </body>

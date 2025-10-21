@@ -30,7 +30,7 @@ urlpatterns = [
     path('api/', include('tools.urls')),      # Tools API
     path('api/', include('blog.urls')),       # Blog API
     path('api/', include('tags.urls')),       # Tags API
-    path('api/', include('apps.asp.urls')),   # ASP API
+    path('api/asp/', include('apps.asp.urls')),   # ASP API
     
     # API Schema & Swagger UI
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

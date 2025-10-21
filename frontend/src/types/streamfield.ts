@@ -87,6 +87,18 @@ export interface ComparisonTableValue {
 }
 
 /**
+ * Tableブロックのvalue型
+ */
+export interface TableValue {
+  /** 表データ（2次元配列） */
+  data: string[][];
+  /** 最初の行をヘッダーとして扱うか */
+  first_row_is_table_header?: boolean;
+  /** 最初の列をヘッダーとして扱うか */
+  first_col_is_header?: boolean;
+}
+
+/**
  * CTAブロックのvalue型
  */
 export interface CTAValue {
@@ -115,14 +127,50 @@ export interface BannerValue {
 }
 
 /**
+ * Spacerブロックのvalue型
+ */
+export interface SpacerBlockValue {
+  /** 余白サイズ（small: 20px, medium: 40px, large: 60px, xlarge: 80px） */
+  size: 'small' | 'medium' | 'large' | 'xlarge';
+}
+
+/**
+ * Alertブロックのvalue型
+ */
+export interface AlertBlockValue {
+  /** アラート種類（info: 情報, success: 成功, warning: 注意, danger: 警告） */
+  alert_type: 'info' | 'success' | 'warning' | 'danger';
+  /** タイトル（オプション） */
+  title?: string;
+  /** コンテンツ（RichTextはHTMLとして返される） */
+  content: string;
+}
+
+/**
+ * Accordionブロックのvalue型
+ */
+export interface AccordionBlockValue {
+  /** アコーディオンのタイトル */
+  title: string;
+  /** 折りたたまれるコンテンツ（RichTextはHTMLとして返される） */
+  content: string;
+  /** デフォルトで開いた状態にするか */
+  is_open_by_default: boolean;
+}
+
+/**
  * 型付きStreamFieldブロック
  */
 export type ParagraphBlock = StreamFieldBlock<ParagraphBlockValue>;
 export type HeadingBlock = StreamFieldBlock<HeadingBlockValue>;
 export type CodeBlock = StreamFieldBlock<CodeBlockValue>;
 export type ComparisonTableBlock = StreamFieldBlock<ComparisonTableValue>;
+export type TableBlock = StreamFieldBlock<TableValue>;
 export type CTABlock = StreamFieldBlock<CTAValue>;
 export type BannerBlock = StreamFieldBlock<BannerValue>;
+export type SpacerBlock = StreamFieldBlock<SpacerBlockValue>;
+export type AlertBlock = StreamFieldBlock<AlertBlockValue>;
+export type AccordionBlock = StreamFieldBlock<AccordionBlockValue>;
 
 /**
  * 既知のブロック型のUnion
@@ -132,8 +180,12 @@ export type KnownBlock =
   | HeadingBlock
   | CodeBlock
   | ComparisonTableBlock
+  | TableBlock
   | CTABlock
-  | BannerBlock;
+  | BannerBlock
+  | SpacerBlock
+  | AlertBlock
+  | AccordionBlock;
 
 /**
  * StreamFieldレンダラーのProps

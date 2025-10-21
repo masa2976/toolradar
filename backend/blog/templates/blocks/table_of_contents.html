@@ -1,0 +1,8 @@
+{# 目次ブロック - フロントエンドで動的にレンダリング #}
+<div class="table-of-contents-block">
+    {# このブロックはフロントエンドで見出しを抽出して目次を生成します #}
+    <div data-toc-title="{{ value.title|default:'目次' }}"
+         data-toc-show-h2="{{ value.show_h2|default:True }}"
+         data-toc-show-h3="{{ value.show_h3|default:True }}">
+    </div>
+</div>

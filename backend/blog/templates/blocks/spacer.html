@@ -1,0 +1,22 @@
+{% load wagtailcore_tags %}
+
+{# 余白調整ブロックのテンプレート #}
+{# セクション間の余白を柔軟に調整 #}
+{# aria-hidden="true" でスクリーンリーダーからは隠す #}
+
+<div 
+    style="
+        {% if self.size == 'small' %}height: 20px;
+        {% elif self.size == 'medium' %}height: 40px;
+        {% elif self.size == 'large' %}height: 60px;
+        {% else %}height: 80px;
+        {% endif %}
+        background-color: #f3f4f6;
+        border: 2px dashed #d1d5db;
+        display: block;
+    "
+    aria-hidden="true"
+    role="presentation"
+>
+    <!-- SpacerBlock: {{ self.size }} -->
+</div>

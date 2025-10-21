@@ -1,0 +1,17 @@
+{# Accordion Block Template #}
+<div class="accordion-block" role="region">
+    <button 
+        class="accordion-header" 
+        aria-expanded="{% if self.is_open_by_default %}true{% else %}false{% endif %}"
+        aria-controls="accordion-{{ self.id }}"
+    >
+        <strong>{{ self.title }}</strong>
+    </button>
+    <div 
+        class="accordion-content" 
+        id="accordion-{{ self.id }}"
+        {% if not self.is_open_by_default %}hidden{% endif %}
+    >
+        {{ self.content }}
+    </div>
+</div>

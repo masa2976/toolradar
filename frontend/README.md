@@ -34,3 +34,32 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+---
+
+## Google AdSense
+
+このプロジェクトではGoogle AdSenseを使用して広告収益を得ています。
+
+**詳細なセットアップ手順については[ADSENSE_SETUP.md](./ADSENSE_SETUP.md)を参照してください。**
+
+主な内容:
+- 審査フロー（申請前・審査中・合格後）
+- 環境変数の設定方法
+- 審査申請時の手順
+- 審査合格後の手順
+- トラブルシューティング
+
+### クイックスタート
+
+審査申請時に必要な環境変数:
+
+```bash
+# frontend/.env.local
+NEXT_PUBLIC_ADSENSE_CLIENT_ID=ca-pub-XXXXXXXXXXXXXXXX
+NEXT_PUBLIC_ADSENSE_STATUS=pending
+```
+
+審査合格後に`STATUS`を`approved`に変更してください。
+
+詳細は[ADSENSE_SETUP.md](./ADSENSE_SETUP.md)を参照。

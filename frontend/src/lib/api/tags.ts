@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { Tag, TagsParams } from '@/types';
+import type { Tag, TagsParams, TagsResponse } from '@/types';
 
 // ============================================
 // タグ関連API
@@ -15,7 +15,7 @@ export const tagsApi = {
    * @returns タグ一覧
    */
   getTags: async (params?: TagsParams): Promise<Tag[]> => {
-    const { data } = await apiClient.get<Tag[]>('/tags/', { params });
-    return data;
+    const { data } = await apiClient.get<TagsResponse>('/tags/', { params });
+    return data.results;  // ページネーションレスポンスからresultsを取り出す
   },
 };

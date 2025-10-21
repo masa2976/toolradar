@@ -54,6 +54,7 @@ export interface BlogPost {
   featured_image?: string;
   published_at: string;
   view_count: number;
+  reading_time?: number;
   author?: {
     name: string;
   };
@@ -109,6 +110,13 @@ export interface RankingParams {
 
 // タグ関連
 // ============================================
+
+export interface TagsResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Tag[];
+}
 
 export interface Tag {
   id: number;

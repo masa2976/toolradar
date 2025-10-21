@@ -1,12 +1,16 @@
 import React from 'react';
 import type { StreamFieldBlock, StreamFieldRendererProps } from '@/types/streamfield';
 import { ParagraphBlock } from './blocks/ParagraphBlock';
-import { ComparisonTableBlock } from './blocks/ComparisonTableBlock';
 import { HeadingBlock } from './blocks/HeadingBlock';
 import { TextBlock } from './blocks/TextBlock';
 import { CodeBlock } from './blocks/CodeBlock';
 import { CTABlock } from './blocks/CTABlock';
 import { BannerBlock } from './blocks/BannerBlock';
+import { TableOfContentsBlock } from './blocks/TableOfContentsBlock';
+import { TableBlock } from './blocks/TableBlock';
+import { SpacerBlock } from './blocks/SpacerBlock';
+import { AlertBlock } from './blocks/AlertBlock';
+import { AccordionBlock } from './blocks/AccordionBlock';
 
 /**
  * StreamFieldレンダラー
@@ -59,14 +63,26 @@ function BlockRenderer({ block }: BlockRendererProps) {
       case 'code':
         return <CodeBlock value={block.value} />;
       
-      case 'comparison_table':
-        return <ComparisonTableBlock value={block.value} />;
-      
       case 'cta':
         return <CTABlock value={block.value} />;
       
       case 'banner':
         return <BannerBlock value={block.value} />;
+      
+      case 'table_of_contents':
+        return <TableOfContentsBlock value={block.value} />;
+      
+      case 'table':
+        return <TableBlock value={block.value} />;
+      
+      case 'spacer':
+        return <SpacerBlock value={block.value} />;
+      
+      case 'alert':
+        return <AlertBlock value={block.value} />;
+      
+      case 'accordion':
+        return <AccordionBlock value={block.value} />;
       
       default:
         console.warn(`Unknown block type: ${block.type}`);

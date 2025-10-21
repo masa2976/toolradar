@@ -1,0 +1,42 @@
+{% load wagtailcore_tags %}
+
+{# アラート・通知ブロックのテンプレート #}
+{# 重要な情報を目立たせるブロック #}
+
+<div 
+    class="alert alert-{{ self.alert_type }}"
+    role="alert"
+    style="
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border-left: 4px solid;
+        margin: 1.5rem 0;
+        {% if self.alert_type == 'info' %}
+            background-color: #dbeafe;
+            border-color: #3b82f6;
+            color: #1e3a8a;
+        {% elif self.alert_type == 'success' %}
+            background-color: #d1fae5;
+            border-color: #10b981;
+            color: #065f46;
+        {% elif self.alert_type == 'warning' %}
+            background-color: #fef3c7;
+            border-color: #f59e0b;
+            color: #92400e;
+        {% elif self.alert_type == 'danger' %}
+            background-color: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+        {% endif %}
+    "
+>
+    {% if self.title %}
+    <div style="font-weight: 700; margin-bottom: 0.5rem; font-size: 1.125rem;">
+        {{ self.title }}
+    </div>
+    {% endif %}
+    
+    <div style="line-height: 1.625;">
+        {{ self.content|richtext }}
+    </div>
+</div>

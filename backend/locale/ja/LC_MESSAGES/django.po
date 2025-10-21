@@ -1,0 +1,36 @@
+# ToolRadar プロジェクト用翻訳
+# Wagtail TableBlock の不足している翻訳を補完
+
+msgid ""
+msgstr ""
+"Project-Id-Version: ToolRadar\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ja\n"
+
+# TableBlock の翻訳
+msgid "Table headers"
+msgstr "表のヘッダー"
+
+msgid "Table caption"
+msgstr "表のキャプション"
+
+msgid "Which cells should be displayed as headers?"
+msgstr "どのセルをヘッダーとして表示しますか？"
+
+msgid "Display the first row as a header"
+msgstr "最初の行をヘッダーとして表示"
+
+msgid "Display the first column as a header"
+msgstr "最初の列をヘッダーとして表示"
+
+msgid "Display the first row AND first column as headers"
+msgstr "最初の行と列の両方をヘッダーとして表示"
+
+msgid "No headers"
+msgstr "ヘッダーなし"
+
+msgid "A heading that identifies the overall topic of the table, and is useful for screen reader users."
+msgstr "表の全体的なトピックを示す見出しで、スクリーンリーダーユーザーに役立ちます。"
+
+msgid "Select a header option"
+msgstr "ヘッダーオプションを選択"

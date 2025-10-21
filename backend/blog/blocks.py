@@ -12,132 +12,7 @@ from wagtail.images.blocks import ImageChooserBlock
 # ASPアフィリエイトブロック
 # ========================================
 
-class ComparisonItemBlock(blocks.StructBlock):
-    """汎用比較項目ブロック（証券会社、ツール、書籍など何でも比較可能）"""
-    
-    name = blocks.CharBlock(
-        label="項目名",
-        max_length=100,
-        help_text="例: DMM FX、MetaTrader 5、一番やさしいFXの本"
-    )
-    
-    image = ImageChooserBlock(
-        label="画像",
-        required=False,
-        help_text="ロゴ、サムネイル、表紙画像など（推奨: 200×200px程度）"
-    )
-    
-    features = blocks.ListBlock(
-        blocks.CharBlock(max_length=200),
-        label="特徴・詳細",
-        min_num=1,
-        max_num=10,
-        help_text="比較ポイントを自由に記載（1〜10個）"
-    )
-    
-    rating = blocks.DecimalBlock(
-        label="評価",
-        min_value=0,
-        max_value=5,
-        decimal_places=1,
-        required=False,
-        help_text="5段階評価（0.0〜5.0）省略可"
-    )
-    
-    price_info = blocks.CharBlock(
-        label="価格・コスト情報",
-        max_length=100,
-        required=False,
-        help_text="例: 無料、月額980円、口座開設無料、¥1,540"
-    )
-    
-    highlight_text = blocks.CharBlock(
-        label="ハイライト",
-        max_length=100,
-        required=False,
-        help_text="例: 🎁新規口座開設で最大30万円、📚Amazon売れ筋1位"
-    )
-    
-    cta_url = blocks.URLBlock(
-        label="リンクURL",
-        required=False,
-        help_text="詳細ページまたはアフィリエイトURL（省略可）"
-    )
-    
-    cta_text = blocks.CharBlock(
-        label="ボタンテキスト",
-        max_length=50,
-        default="詳細を見る",
-        required=False,
-        help_text="CTAボタンに表示するテキスト"
-    )
-    
-    tracking_id = blocks.CharBlock(
-        label="トラッキングID",
-        max_length=50,
-        required=False,
-        help_text="A/Bテスト用の識別ID（省略可）"
-    )
-    
-    class Meta:
-        icon = 'list-ul'
-        label = '比較項目'
 
-
-class ComparisonTableBlock(blocks.StructBlock):
-    """汎用比較表ブロック（証券会社、ツール、書籍など何でも比較）"""
-    
-    title = blocks.CharBlock(
-        label="比較表タイトル",
-        max_length=100,
-        default="比較表",
-        help_text="例: おすすめFX証券会社TOP3、MT4 vs MT5徹底比較、初心者向け投資書籍3選"
-    )
-    
-    description = blocks.TextBlock(
-        label="説明文",
-        max_length=500,
-        required=False,
-        help_text="比較表の概要や注意事項（省略可）"
-    )
-    
-    items = blocks.ListBlock(
-        ComparisonItemBlock(),
-        label="比較項目",
-        min_num=2,
-        max_num=10,
-        help_text="比較する項目を追加（2〜10個）"
-    )
-    
-    layout = blocks.ChoiceBlock(
-        label="表示形式",
-        choices=[
-            ('table', '比較表形式'),
-            ('cards', 'カード形式'),
-            ('ranking', 'ランキング形式'),
-        ],
-        default='cards',
-        help_text="比較表の表示レイアウト"
-    )
-    
-    show_rating = blocks.BooleanBlock(
-        label="評価を表示",
-        default=True,
-        required=False,
-        help_text="評価（星）を表示するか"
-    )
-    
-    show_price = blocks.BooleanBlock(
-        label="価格情報を表示",
-        default=True,
-        required=False,
-        help_text="価格・コスト情報を表示するか"
-    )
-    
-    class Meta:
-        template = 'blocks/comparison_table.html'
-        icon = 'table'
-        label = '比較表'
 
 
 class CTABlock(blocks.StructBlock):
@@ -257,6 +132,42 @@ class HeadingBlock(blocks.StructBlock):
         template = 'blocks/heading.html'
 
 
+class TableOfContentsBlock(blocks.StructBlock):
+    """
+    目次ブロック
+    
+    記事内の見出し（h2, h3）を自動抽出して目次を生成します。
+    編集者は目次を配置したい位置にこのブロックを追加するだけで、
+    フロントエンドが自動的に見出しリストを生成します。
+    """
+    title = blocks.CharBlock(
+        label='目次タイトル',
+        default='目次',
+        max_length=50,
+        required=False,
+        help_text='目次のタイトル（省略時は「目次」）'
+    )
+    
+    show_h2 = blocks.BooleanBlock(
+        label='H2を表示',
+        default=True,
+        required=False,
+        help_text='大見出し（H2）を目次に表示'
+    )
+    
+    show_h3 = blocks.BooleanBlock(
+        label='H3を表示',
+        default=True,
+        required=False,
+        help_text='中見出し（H3）を目次に表示'
+    )
+    
+    class Meta:
+        icon = 'list-ul'
+        label = '目次'
+        template = 'blocks/table_of_contents.html'
+
+
 # ========================================
 # 関連コンテンツブロック
 # ========================================
@@ -342,3 +253,99 @@ class CodeBlock(blocks.StructBlock):
         template = 'blocks/code.html'
         icon = 'code'
         label = 'コードブロック'
+
+
+
+# ========================================
+# レイアウト調整ブロック
+# ========================================
+
+class SpacerBlock(blocks.StructBlock):
+    """
+    余白調整ブロック
+    
+    セクション間の余白を柔軟に調整できるブロック。
+    レイアウトの見やすさ向上に使用。
+    """
+    size = blocks.ChoiceBlock(
+        label='余白サイズ',
+        choices=[
+            ('small', '小（20px）'),
+            ('medium', '中（40px）'),
+            ('large', '大（60px）'),
+            ('xlarge', '特大（80px）'),
+        ],
+        default='medium',
+        help_text='セクション間の余白の大きさを選択'
+    )
+    
+    class Meta:
+        template = 'blocks/spacer.html'
+        icon = 'arrows-up-down'
+        label = '余白'
+
+
+class AlertBlock(blocks.StructBlock):
+    """
+    アラート・通知ブロック
+    
+    重要な情報を目立たせるブロック。
+    情報、成功、注意、警告の4種類。
+    """
+    alert_type = blocks.ChoiceBlock(
+        label='アラート種類',
+        choices=[
+            ('info', '情報（青）'),
+            ('success', '成功・推奨（緑）'),
+            ('warning', '注意（黄）'),
+            ('danger', '警告（赤）'),
+        ],
+        default='info',
+        help_text='アラートの種類を選択（色とアイコンが変わります）'
+    )
+    title = blocks.CharBlock(
+        label='タイトル',
+        required=False,
+        max_length=100,
+        help_text='アラートのタイトル（省略可）'
+    )
+    content = blocks.RichTextBlock(
+        label='内容',
+        features=['bold', 'italic', 'link'],
+        help_text='アラートの本文（太字、斜体、リンク使用可）'
+    )
+    
+    class Meta:
+        template = 'blocks/alert.html'
+        icon = 'warning'
+        label = 'アラート'
+
+
+class AccordionBlock(blocks.StructBlock):
+    """
+    折りたたみ可能なアコーディオンブロック
+    
+    長い説明やFAQなど、必要に応じて表示/非表示を切り替えられるコンテンツに使用。
+    ユーザーが見出しをクリックすることで、本文の表示/非表示を切り替えられます。
+    """
+    title = blocks.CharBlock(
+        label='見出し',
+        max_length=200,
+        help_text='折りたたみセクションの見出し（クリックで開閉）'
+    )
+    content = blocks.RichTextBlock(
+        label='本文',
+        features=['bold', 'italic', 'link', 'ol', 'ul'],
+        help_text='折りたたまれるコンテンツ（太字、斜体、リンク、リスト使用可）'
+    )
+    is_open_by_default = blocks.BooleanBlock(
+        label='デフォルトで開く',
+        required=False,
+        default=False,
+        help_text='チェックすると、最初から開いた状態で表示されます'
+    )
+    
+    class Meta:
+        template = 'blocks/accordion.html'
+        icon = 'collapse-down'
+        label = 'アコーディオン'

@@ -168,6 +168,11 @@ TIME_ZONE = 'Asia/Tokyo'
 
 USE_I18N = True
 
+# ローカル翻訳ファイルのパス
+LOCALE_PATHS = [
+    BASE_DIR / 'locale',
+]
+
 USE_TZ = True
 
 

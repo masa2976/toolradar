@@ -33,9 +33,10 @@ export function BannerBlock({ value }: BannerBlockProps) {
   const htmlContent = typeof html_code === 'string' ? html_code : String(html_code || '');
 
   return (
-    <div 
-      className="my-6"
-      dangerouslySetInnerHTML={{ __html: htmlContent }}
-    />
+    <div className="my-6 flex justify-center items-center">
+      <div 
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
+      />
+    </div>
   );
 }

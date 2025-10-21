@@ -22,12 +22,15 @@ from wagtail.contrib.table_block.blocks import TableBlock
 
 # カスタムブロックのインポート
 from .blocks import (
-    ComparisonTableBlock,
     CTABlock,
     BannerBlock,
     RelatedToolsBlock,
     CodeBlock,
     HeadingBlock,
+    TableOfContentsBlock,
+    SpacerBlock,
+    AlertBlock,
+    AccordionBlock,  # Phase 11-3: 折りたたみコンテンツブロック
 )
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
 from modelcluster.fields import ParentalManyToManyField
@@ -222,16 +225,22 @@ class BlogPage(HeadlessPreviewMixin, Page):
             label="表",
             help_text="データを表形式で表示（行・列を追加できます）",
             table_options={
-                'contextMenu': [
-                    'row_above',
-                    'row_below', 
-                    'col_left',
-                    'col_right',
-                    'remove_row',
-                    'remove_col',
-                    'undo',
-                    'redo'
-                ]
+                'contextMenu': {
+                    'items': {
+                        'row_above': {'name': '上に行を挿入'},
+                        'row_below': {'name': '下に行を挿入'},
+                        'col_left': {'name': '左に列を挿入'},
+                        'col_right': {'name': '右に列を挿入'},
+                        'remove_row': {'name': '行を削除'},
+                        'remove_col': {'name': '列を削除'},
+                        'undo': {'name': '元に戻す'},
+                        'redo': {'name': 'やり直す'}
+                    }
+                },
+                'stretchH': 'all',        # 列を水平方向に伸ばす
+                'autoWrapRow': True,      # 行の自動折り返し
+                'autoWrapCol': True,      # 列の自動折り返し
+                'minSpareRows': 0,        # 最小予備行数
             }
         )),
         ('quote', blocks.BlockQuoteBlock(
@@ -241,18 +250,28 @@ class BlogPage(HeadlessPreviewMixin, Page):
         ('embed', EmbedBlock(
             label="埋め込み",
             help_text="YouTube動画やツイート等の埋め込み"
-        )),
+        )),        
+        # 目次
+        ('table_of_contents', TableOfContentsBlock()),
+
         
         # コード表示
         ('code', CodeBlock()),
         
-        # 比較表ブロック（収益化の核心）
-        ('comparison_table', ComparisonTableBlock()),
         ('cta', CTABlock()),
         ('banner', BannerBlock()),
         
         # 関連コンテンツ
         ('related_tools', RelatedToolsBlock()),
+        
+        # レイアウト調整
+        ('spacer', SpacerBlock()),
+        
+        # アラート・通知
+        ('alert', AlertBlock()),
+        
+        # 折りたたみ
+        ('accordion', AccordionBlock()),
     ], use_json_field=True, blank=True)
     
     # ========================================

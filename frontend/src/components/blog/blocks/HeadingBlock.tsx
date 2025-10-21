@@ -6,6 +6,7 @@
  */
 
 import React from 'react';
+import { generateHeadingId } from '@/lib/tocUtils';
 
 interface HeadingBlockValue {
   text: string;
@@ -18,6 +19,9 @@ interface HeadingBlockProps {
 
 export function HeadingBlock({ value }: HeadingBlockProps) {
   const { text, level } = value;
+  
+  // 見出しIDを生成（目次用）
+  const headingId = generateHeadingId(text);
   
   // レベルに応じたスタイル
   const styles = {
@@ -33,7 +37,10 @@ export function HeadingBlock({ value }: HeadingBlockProps) {
   
   return React.createElement(
     HeadingTag,
-    { className },
+    { 
+      id: headingId,
+      className 
+    },
     text
   );
 }

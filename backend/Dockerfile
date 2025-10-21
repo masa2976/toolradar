@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
     gcc \
     libjpeg-dev \
     zlib1g-dev \
+    gettext \
     && rm -rf /var/lib/apt/lists/*
 
 # 開発ステージ
