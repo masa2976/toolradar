@@ -14,8 +14,8 @@ class ToolFilter(django_filters.FilterSet):
     # プラットフォームフィルタ（複数選択可）
     platform = django_filters.CharFilter(method='filter_platform')
     
-    # ツールタイプフィルタ
-    tool_type = django_filters.ChoiceFilter(choices=Tool.TOOL_TYPE_CHOICES)
+    # ツールタイプフィルタ（複数指定可、カンマ区切り）
+    tool_type = django_filters.CharFilter(method='filter_tool_type')
     
     # 価格タイプフィルタ
     price_type = django_filters.ChoiceFilter(choices=Tool.PRICE_TYPE_CHOICES)
@@ -31,10 +31,16 @@ class ToolFilter(django_filters.FilterSet):
         fields = ['platform', 'tool_type', 'price_type', 'tags', 'ribbons']
     
     def filter_platform(self, queryset, name, value):
-        """プラットフォームフィルタ（カンマ区切りで複数指定可、OR条件）"""
+        \"\"\"プラットフォームフィルタ（カンマ区切りで複数指定可、OR条件）\"\"\"
         platforms = [p.strip() for p in value.split(',')]
-        # ArrayFieldのoverlapでOR検索（mt4 OR mt5 OR tradingview）
-        return queryset.filter(platform__overlap=platforms)
+        # CharFieldのin検索でOR条件（mt4 OR mt5 OR tradingview）
+        return queryset.filter(platform__in=platforms)
+    
+    def filter_tool_type(self, queryset, name, value):
+        \"\"\"ツールタイプフィルタ（カンマ区切りで複数指定可、OR条件）\"\"\"
+        tool_types = [t.strip() for t in value.split(',')]
+        # CharFieldのin検索でOR条件（EA OR Strategy OR Indicator）
+        return queryset.filter(tool_type__in=tool_types)
     
     def filter_tags(self, queryset, name, value):
         """タグフィルタ（カンマ区切りで複数指定可）"""
