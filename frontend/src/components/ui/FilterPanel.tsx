@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +28,7 @@ export interface FilterState {
 
 interface FilterPanelProps {
   onFilterChange: (filters: FilterState) => void;
+  initialFilters?: FilterState;  // URLパラメータからの初期値
   className?: string;
 }
 
@@ -37,13 +38,20 @@ interface FilterPanelProps {
  * ツール検索用の多機能フィルターパネル。
  * Accordion形式で折りたたみ可能、複数条件フィルター、リセット機能対応。
  */
-export function FilterPanel({ onFilterChange, className }: FilterPanelProps) {
-  const [filters, setFilters] = useState<FilterState>({
+export function FilterPanel({ onFilterChange, initialFilters, className }: FilterPanelProps) {
+  const [filters, setFilters] = useState<FilterState>(initialFilters || {
     platforms: [],
     toolTypes: [],
     priceType: undefined,
     tags: [],
   });
+
+  // URLパラメータが変更されたときにフィルターを更新
+  useEffect(() => {
+    if (initialFilters) {
+      setFilters(initialFilters);
+    }
+  }, [initialFilters]);
 
   /**
    * フィルター変更ハンドラー

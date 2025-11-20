@@ -75,7 +75,7 @@ apiClient.interceptors.response.use(
     } else if (error.request) {
       // ネットワークエラー
       apiError.message = 'Network error: Unable to reach server';
-      console.error('Network Error:', error.message);
+      console.debug('Network Error:', error.message);
     } else {
       // その他のエラー
       apiError.message = error.message || 'Unknown error';

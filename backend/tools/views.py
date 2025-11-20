@@ -31,13 +31,13 @@ class ToolFilter(django_filters.FilterSet):
         fields = ['platform', 'tool_type', 'price_type', 'tags', 'ribbons']
     
     def filter_platform(self, queryset, name, value):
-        \"\"\"プラットフォームフィルタ（カンマ区切りで複数指定可、OR条件）\"\"\"
+        """プラットフォームフィルタ（カンマ区切りで複数指定可、OR条件）"""
         platforms = [p.strip() for p in value.split(',')]
         # CharFieldのin検索でOR条件（mt4 OR mt5 OR tradingview）
         return queryset.filter(platform__in=platforms)
     
     def filter_tool_type(self, queryset, name, value):
-        \"\"\"ツールタイプフィルタ（カンマ区切りで複数指定可、OR条件）\"\"\"
+        """ツールタイプフィルタ(カンマ区切りで複数指定可、OR条件)"""
         tool_types = [t.strip() for t in value.split(',')]
         # CharFieldのin検索でOR条件（EA OR Strategy OR Indicator）
         return queryset.filter(tool_type__in=tool_types)

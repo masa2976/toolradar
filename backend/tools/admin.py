@@ -50,38 +50,43 @@ class ArrayFieldWidget(widgets.Widget):
 class ToolResource(resources.ModelResource):
     """Tool一括インポート用リソース"""
     
-    # ArrayFieldの処理
-    platform = fields.Field(
-        column_name='platform',
-        attribute='platform',
-        widget=ArrayFieldWidget()
-    )
+    # ArrayFieldの処理（ribbonsのみ実際にArrayField）
     ribbons = fields.Field(
         column_name='ribbons',
         attribute='ribbons',
-        widget=ArrayFieldWidget()
+        widget=ArrayFieldWidget(),
+        default=[]
     )
     
     # ManyToManyFieldの処理（タグ）
     tags = fields.Field(
         column_name='tags',
         attribute='tags',
-        widget=widgets.ManyToManyWidget(Tag, separator=',', field='name')
+        widget=widgets.ManyToManyWidget(Tag, separator=',', field='name'),
+        default=''
     )
     
     class Meta:
         model = Tool
-        import_id_fields = ('slug',)  # 重複チェック用
-        skip_unchanged = False        # ManyToMany対応のためFalseに変更
-        use_bulk = False              # ManyToMany対応のためFalseに変更
+        import_id_fields = ('slug',)  # slugで一意識別
+        skip_unchanged = False        # ManyToMany対応
+        use_bulk = False              # ManyToMany対応
         batch_size = 1000            # バッチサイズ
+        # エクスポート用フィールド（タイムスタンプは読み取り専用）
         fields = (
-            'id', 'name', 'slug', 'short_description', 'long_description',
+            'name', 'slug', 'short_description', 'long_description',
+            'platform', 'tool_type', 'price_type', 'price',
+            'ribbons', 'image_url', 'external_url', 'metadata',
+            'tags'
+        )
+        export_order = (
+            'name', 'slug', 'short_description', 'long_description',
             'platform', 'tool_type', 'price_type', 'price',
             'ribbons', 'image_url', 'external_url', 'metadata',
             'tags', 'created_at', 'updated_at'
         )
-        export_order = fields
+        # idフィールドを明示的に除外
+        exclude = ('id',)
     
     def before_import_row(self, row, **kwargs):
         """インポート前の行処理"""
@@ -94,39 +99,82 @@ class ToolResource(resources.ModelResource):
         if row.get('platform'):
             if isinstance(row['platform'], str):
                 row['platform'] = row['platform'].lower().strip()
+        
+        # created_at, updated_atをインポート時に除外
+        row.pop('created_at', None)
+        row.pop('updated_at', None)
+        
+        # metadata が空文字列の場合は空のdictに変換
+        if row.get('metadata') == '':
+            row['metadata'] = '{}'
+        elif row.get('metadata') and isinstance(row['metadata'], str):
+            # JSON文字列をパースして有効か確認
+            try:
+                import json
+                json.loads(row['metadata'])
+            except:
+                row['metadata'] = '{}'
+        
+        # ribbonsが空の場合の処理
+        if row.get('ribbons') == '':
+            row['ribbons'] = ''
+        
+        # priceが空文字列の場合はNoneに変換
+        if row.get('price') == '':
+            row['price'] = None
     
     def after_import_instance(self, instance, new, row=None, **kwargs):
-        """インポート後の処理（ManyToMany対応）"""
-        # tagsフィールドの処理
-        if row and 'tags' in row:
-            tags_str = row.get('tags', '')
-            if tags_str:
-                # カンマで分割してタグを取得
-                tag_names = [name.strip() for name in tags_str.split(',') if name.strip()]
-                # タグオブジェクトを取得
-                tag_objects = []
-                for tag_name in tag_names:
-                    try:
-                        tag = Tag.objects.get(name=tag_name)
-                        tag_objects.append(tag)
-                    except Tag.DoesNotExist:
-                        # タグが存在しない場合はスキップ（またはログ出力）
-                        pass
-                
-                # インスタンスが保存されていない場合は、一時的に保存
-                if not instance.pk:
-                    instance.save()
-                
-                # ManyToManyを設定
-                instance.tags.set(tag_objects)
+        """
+        インポート後の処理
+        タグの正規化と関連付けを行う
+        """
+        if row is None:
+            return
+        
+        # インスタンスが新規作成の場合は先に保存
+        if new and not instance.pk:
+            instance.save()
+        
+        # タグ処理（カンマ区切りのタグ名を想定）
+        tags_str = row.get('tags', '')
+        if tags_str and isinstance(tags_str, str):
+            # カンマ区切りでタグ名を分割
+            tag_names = [name.strip() for name in tags_str.split(',') if name.strip()]
+            
+            # 正規化処理を使ってタグを取得または作成
+            normalized_tags = []
+            for tag_name in tag_names:
+                try:
+                    # Tag.normalize_and_get_or_create()を使用
+                    tag = Tag.normalize_and_get_or_create(tag_name)
+                    normalized_tags.append(tag)
+                except Exception as e:
+                    # エラーが発生した場合はログに記録
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"タグ '{tag_name}' の正規化に失敗しました: {e}")
+            
+            # タグを設定
+            if normalized_tags:
+                instance.tags.set(normalized_tags)
+        
+    def export(self, queryset=None, **kwargs):
+        """エクスポート処理のカスタマイズ"""
+        if queryset is None:
+            queryset = self.get_queryset()
+        
+        # エクスポート時はタグも含めてprefetchして最適化
+        queryset = queryset.prefetch_related('tags')
+        
+        return super().export(queryset, **kwargs)
 
 
 @admin.register(Tool)
 class ToolAdmin(ImportExportModelAdmin):
-    """ツール管理画面（インポート・エクスポート対応）"""
+    """ツール管理画面(インポート・エクスポート対応)"""
     
     resource_class = ToolResource
-    formats = (CSVUTF8BOM,)  # UTF-8 BOM付きCSV（Excel日本語対応）
+    formats = (CSVUTF8BOM,)  # UTF-8 BOM付きCSV(Excel日本語対応)
     
     list_display = [
         'name',
@@ -154,6 +202,9 @@ class ToolAdmin(ImportExportModelAdmin):
         'updated_at'
     ]
     
+    # filter_horizontalは削除（ClusterTaggableManagerと互換性なし）
+    # tagsフィールドは標準のタグ入力ウィジェットを使用
+    
     fieldsets = (
         ('基本情報', {
             'fields': ('name', 'slug', 'short_description', 'long_description')
@@ -177,11 +228,36 @@ class ToolAdmin(ImportExportModelAdmin):
         }),
     )
     
+    def save_related(self, request, form, formsets, change):
+        """
+        ManyToManyフィールド（タグ）保存後に正規化処理を実行
+        Admin画面での手動入力時も表記揺れを防ぐ
+        """
+        # まず通常通り保存
+        super().save_related(request, form, formsets, change)
+        
+        # 保存されたオブジェクトを取得
+        obj = form.instance
+        
+        # 現在のタグを取得
+        current_tags = list(obj.tags.all())
+        
+        if current_tags:
+            # 正規化されたタグのリストを作成
+            normalized_tags = []
+            for tag in current_tags:
+                # 正規化処理を実行
+                normalized_tag = Tag.normalize_and_get_or_create(tag.name)
+                normalized_tags.append(normalized_tag)
+            
+            # 一度全てクリアして、正規化されたタグを再設定
+            obj.tags.clear()
+            obj.tags.add(*normalized_tags)
+    
     def display_platforms(self, obj):
         """プラットフォームを表示"""
         # platformは単一の文字列になったので、そのまま大文字で表示
         return obj.platform.upper()
-    display_platforms.short_description = 'プラットフォーム'
     display_platforms.short_description = 'プラットフォーム'
 
 
@@ -275,6 +351,9 @@ class EventLogAdmin(admin.ModelAdmin):
     ]
     date_hierarchy = 'created_at'
     
+    # アクション追加
+    actions = ['cleanup_old_events_dry_run', 'cleanup_old_events']
+    
     fieldsets = (
         ('イベント情報', {
             'fields': ('tool', 'event_type', 'duration_seconds', 'share_platform')
@@ -288,4 +367,206 @@ class EventLogAdmin(admin.ModelAdmin):
     def is_bot_display(self, obj):
         """Bot判定結果を表示"""
         return '✅ Bot' if EventLog.is_bot(obj.user_agent) else '❌ Human'
+
+    def changelist_view(self, request, extra_context=None):
+        """一覧画面にデータベース統計情報とスケジューラー情報を追加"""
+        extra_context = extra_context or {}
+        
+        # テーブルサイズ取得
+        from django.db import connection
+        cursor = connection.cursor()
+        
+        try:
+            cursor.execute("""
+                SELECT pg_size_pretty(pg_total_relation_size('tools_eventlog'))
+            """)
+            table_size = cursor.fetchone()[0]
+        except Exception:
+            table_size = 'N/A'
+        
+        # 統計情報
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        total_events = EventLog.objects.count()
+        
+        # 直近7日間のイベント数
+        week_ago = timezone.now() - timedelta(days=7)
+        week_events = EventLog.objects.filter(created_at__gte=week_ago).count()
+        
+        # 直近30日間のイベント数
+        month_ago = timezone.now() - timedelta(days=30)
+        month_events = EventLog.objects.filter(created_at__gte=month_ago).count()
+        
+        # イベント種別ごとの集計
+        from django.db import models as django_models
+        event_stats = EventLog.objects.values('event_type').annotate(
+            count=django_models.Count('id')
+        ).order_by('-count')
+        
+        # 最古のレコード
+        oldest_event = EventLog.objects.order_by('created_at').first()
+        oldest_date = oldest_event.created_at if oldest_event else None
+        
+        # 30日以上古いかチェック
+        is_old_data = False
+        if oldest_date:
+            days_old = (timezone.now() - oldest_date).days
+            is_old_data = days_old >= 30
+        
+        extra_context['db_stats'] = {
+            'table_size': table_size,
+            'total_events': total_events,
+            'week_events': week_events,
+            'month_events': month_events,
+            'event_stats': event_stats,
+            'oldest_date': oldest_date,
+            'is_old_data': is_old_data,
+        }
+        
+        # スケジューラー情報を取得
+        scheduler_info = self._get_scheduler_info()
+        extra_context['scheduler_info'] = scheduler_info
+        
+        return super().changelist_view(request, extra_context=extra_context)
+    
+    def _get_scheduler_info(self):
+        """スケジューラー情報を取得"""
+        from tools.scheduler import start_scheduler
+        from django.utils import timezone
+        
+        try:
+            scheduler = start_scheduler()
+            
+            # クリーンアップジョブを取得
+            cleanup_job = scheduler.get_job('cleanup_old_events')
+            
+            if cleanup_job:
+                return {
+                    'is_running': scheduler.running,
+                    'job_exists': True,
+                    'next_run_time': cleanup_job.next_run_time,
+                    'schedule': '毎週日曜日 03:00 JST',
+                    'job_name': cleanup_job.name,
+                }
+            else:
+                return {
+                    'is_running': scheduler.running,
+                    'job_exists': False,
+                    'error': 'クリーンアップジョブが見つかりません',
+                }
+        except Exception as e:
+            return {
+                'is_running': False,
+                'job_exists': False,
+                'error': f'スケジューラー情報の取得に失敗: {str(e)}',
+            }
     is_bot_display.short_description = 'Bot判定'
+    
+    def cleanup_old_events_dry_run(self, request, queryset):
+        """古いイベントログをクリーンアップ(ドライラン)"""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        # 30日前の日時を計算
+        cutoff_date = timezone.now() - timedelta(days=30)
+        
+        # 削除対象のカウント
+        total_count = EventLog.objects.filter(created_at__lt=cutoff_date).count()
+        
+        if total_count == 0:
+            self.message_user(
+                request,
+                '削除対象のイベントログはありません。',
+                level='info'
+            )
+        else:
+            # イベント種別ごとの集計
+            from django.db import models as django_models
+            event_breakdown = EventLog.objects.filter(
+                created_at__lt=cutoff_date
+            ).values('event_type').annotate(
+                count=django_models.Count('id')
+            ).order_by('-count')
+            
+            breakdown_text = ', '.join([
+                f"{item['event_type']}: {item['count']}件"
+                for item in event_breakdown
+            ])
+            
+            dry_run_msg = (
+                f'【ドライラン】削除対象: {total_count}件 '
+                f'({cutoff_date.strftime("%Y-%m-%d %H:%M")}より前) - 内訳: {breakdown_text}'
+            )
+            
+            self.message_user(
+                request,
+                dry_run_msg,
+                level='warning'
+            )
+    
+    cleanup_old_events_dry_run.short_description = '🔍 古いログをクリーンアップ（ドライラン）'
+    
+    def cleanup_old_events(self, request, queryset):
+        """古いイベントログをクリーンアップ(実行)"""
+        from django.utils import timezone
+        from datetime import timedelta
+        from django.core.mail import mail_admins
+        
+        # 30日前の日時を計算
+        cutoff_date = timezone.now() - timedelta(days=30)
+        
+        # 削除前のカウント
+        total_count = EventLog.objects.filter(created_at__lt=cutoff_date).count()
+        
+        if total_count == 0:
+            self.message_user(
+                request,
+                '削除対象のイベントログはありません。',
+                level='info'
+            )
+            return
+        
+        # イベント種別ごとの集計(削除前)
+        from django.db import models as django_models
+        event_breakdown = EventLog.objects.filter(
+            created_at__lt=cutoff_date
+        ).values('event_type').annotate(
+            count=django_models.Count('id')
+        ).order_by('-count')
+        
+        # 削除実行
+        deleted = EventLog.objects.filter(created_at__lt=cutoff_date).delete()
+        deleted_count = deleted[0]
+        
+        breakdown_text = ', '.join([
+            f"{item['event_type']}: {item['count']}件"
+            for item in event_breakdown
+        ])
+        
+        # 成功メッセージ
+        success_msg = (
+            f'✅ {deleted_count}件のイベントログを削除しました '
+            f'({cutoff_date.strftime("%Y-%m-%d %H:%M")}より前) - 内訳: {breakdown_text}'
+        )
+        self.message_user(request, success_msg, level='success')
+        
+        # 10万件以上削除した場合はメール通知
+        if deleted_count >= 100000:
+            try:
+                email_message = (
+                    f'{deleted_count}件のイベントログを削除しました。\n'
+                    f'詳細: {breakdown_text}'
+                )
+                mail_admins(
+                    subject='EventLog大量削除アラート',
+                    message=email_message,
+                )
+            except Exception as e:
+                self.message_user(
+                    request,
+                    f'メール送信エラー: {str(e)}',
+                    level='warning'
+                )
+    
+    cleanup_old_events.short_description = '🗑️ 古いログをクリーンアップ（実行）'

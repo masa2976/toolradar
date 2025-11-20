@@ -1,0 +1,114 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static humanize %}
+
+{% block content_title %}
+    <h1>{{ title }}</h1>
+    
+    {# データベース統計情報 #}
+    {% if db_stats %}
+    <div class="module" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+        <h2 style="margin-top: 0;">📊 データベース統計</h2>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <div class="stat-box">
+                <h3 style="color: #666; font-size: 0.9em; margin: 0;">テーブルサイズ</h3>
+                <p style="font-size: 1.5em; font-weight: bold; margin: 5px 0; color: #2e7d32;">
+                    {{ db_stats.table_size }}
+                </p>
+            </div>
+            
+            <div class="stat-box">
+                <h3 style="color: #666; font-size: 0.9em; margin: 0;">総イベント数</h3>
+                <p style="font-size: 1.5em; font-weight: bold; margin: 5px 0; color: #1976d2;">
+                    {{ db_stats.total_events|intcomma }}件
+                </p>
+            </div>
+            
+            <div class="stat-box">
+                <h3 style="color: #666; font-size: 0.9em; margin: 0;">直近7日間</h3>
+                <p style="font-size: 1.5em; font-weight: bold; margin: 5px 0; color: #f57c00;">
+                    {{ db_stats.week_events|intcomma }}件
+                </p>
+            </div>
+            
+            <div class="stat-box">
+                <h3 style="color: #666; font-size: 0.9em; margin: 0;">直近30日間</h3>
+                <p style="font-size: 1.5em; font-weight: bold; margin: 5px 0; color: #7b1fa2;">
+                    {{ db_stats.month_events|intcomma }}件
+                </p>
+            </div>
+        </div>
+        
+        {% if db_stats.event_stats %}
+        <div style="margin-top: 20px;">
+            <h3 style="color: #666; font-size: 1em; margin-bottom: 10px;">📈 イベント種別ごとの集計</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+                {% for stat in db_stats.event_stats %}
+                <div style="background: {% if stat.event_type == 'view' %}#e3f2fd{% elif stat.event_type == 'duration' %}#fff3e0{% elif stat.event_type == 'share' %}#f3e5f5{% else %}#f5f5f5{% endif %}; padding: 12px; border-radius: 5px; border-left: 4px solid {% if stat.event_type == 'view' %}#2196f3{% elif stat.event_type == 'duration' %}#ff9800{% elif stat.event_type == 'share' %}#9c27b0{% else %}#757575{% endif %};">
+                    <div style="font-size: 0.85em; color: #666; margin-bottom: 3px;">
+                        {% if stat.event_type == 'view' %}
+                            👁️ ページ閲覧
+                        {% elif stat.event_type == 'duration' %}
+                            ⏱️ 滞在時間
+                        {% elif stat.event_type == 'share' %}
+                            🔗 SNSシェア
+                        {% else %}
+                            📊 {{ stat.event_type }}
+                        {% endif %}
+                    </div>
+                    <div style="font-size: 1.3em; font-weight: bold; color: #333;">
+                        {{ stat.count|intcomma }}<span style="font-size: 0.7em; color: #666;">件</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if db_stats.oldest_date %}
+        <div style="margin-top: 15px; padding: 10px; background: {% if db_stats.is_old_data %}#fff3cd{% else %}#e8f5e9{% endif %}; border-left: 3px solid {% if db_stats.is_old_data %}#ffc107{% else %}#4caf50{% endif %}; border-radius: 3px;">
+            <strong>{% if db_stats.is_old_data %}⚠️{% else %}✅{% endif %} 最古のレコード:</strong> {{ db_stats.oldest_date|date:"Y年m月d日 H:i" }}
+            {% if db_stats.is_old_data %}
+            <br><small style="color: #856404;">※ 30日以上古いレコードがあります。cleanup_eventsコマンドの実行を検討してください。</small>
+            {% else %}
+            <br><small style="color: #2e7d32;">※ データは適切に管理されています。</small>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        {# スケジューラー情報 #}
+        {% if scheduler_info %}
+        <div style="margin-top: 15px; padding: 10px; background: {% if scheduler_info.is_running and scheduler_info.job_exists %}#d4edda{% else %}#f8d7da{% endif %}; border-left: 3px solid {% if scheduler_info.is_running and scheduler_info.job_exists %}#28a745{% else %}#dc3545{% endif %}; border-radius: 3px;">
+            {% if scheduler_info.is_running and scheduler_info.job_exists %}
+                <strong>🤖 自動クリーンアップ:</strong> <span style="color: #155724; font-weight: bold;">有効</span>
+                <br><small style="color: #155724;">
+                    📅 スケジュール: {{ scheduler_info.schedule }}
+                    {% if scheduler_info.next_run_time %}
+                    <br>⏰ 次回実行: {{ scheduler_info.next_run_time|date:"Y年m月d日 H:i" }}
+                    {% endif %}
+                </small>
+            {% elif scheduler_info.error %}
+                <strong>⚠️ スケジューラー:</strong> <span style="color: #721c24;">{{ scheduler_info.error }}</span>
+            {% else %}
+                <strong>⚠️ 自動クリーンアップ:</strong> <span style="color: #721c24;">無効</span>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <div style="margin-top: 15px; padding: 10px; background: #e7f3ff; border-left: 3px solid #2196f3; border-radius: 3px;">
+            <strong>💡 手動実行:</strong>
+            <div style="margin-top: 8px;">
+                <small style="color: #0c5460;">
+                    • <strong>Admin画面:</strong> 上部の「アクション」から「古いログをクリーンアップ」を選択
+                </small>
+            </div>
+            <div style="margin-top: 8px;">
+                <small style="color: #0c5460;">• <strong>コマンドライン:</strong></small>
+                <div style="margin-top: 4px; margin-left: 16px;">
+                    <code style="background: #263238; color: #aed581; padding: 6px 12px; border-radius: 4px; display: inline-block; font-size: 13px; font-family: 'Monaco', 'Menlo', 'Consolas', monospace;">python manage.py cleanup_events --dry-run</code>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}

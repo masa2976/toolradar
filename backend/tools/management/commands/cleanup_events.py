@@ -65,11 +65,20 @@ class Command(BaseCommand):
         
         self.stdout.write(f'\n合計削除対象: {total_count:,}件\n')
         
+        # 🆕 テーブルサイズを取得（PostgreSQL）
+        from django.db import connection
+        cursor = connection.cursor()
+        cursor.execute("""
+            SELECT pg_size_pretty(pg_total_relation_size('tools_eventlog'))
+        """)
+        table_size = cursor.fetchone()[0] if cursor.rowcount > 0 else 'N/A'
+        self.stdout.write(f'現在のテーブルサイズ: {table_size}\n')
+        
         if dry_run:
             self.stdout.write(self.style.WARNING('DRY RUN モード: 実際には削除しません'))
         else:
             # 確認メッセージ
-            self.stdout.write(self.style.WARNING(f'本当に{total_count:,}件のログを削除しますか？'))
+            self.stdout.write(self.style.WARNING(f'本当に{total_count:,}件のログを削除しますか?'))
             
             # 実際に削除
             deleted_count, deleted_details = old_events.delete()
@@ -81,6 +90,29 @@ class Command(BaseCommand):
                 self.stdout.write('\n削除詳細:')
                 for model, count in deleted_details.items():
                     self.stdout.write(f'  - {model}: {count:,}件')
+            
+            # 🆕 大量削除時のメール通知
+            threshold = 100000  # 10万件以上で通知
+            if deleted_count >= threshold:
+                try:
+                    from django.core.mail import mail_admins
+                    mail_admins(
+                        subject=f'⚠️ EventLog大量削除アラート ({deleted_count:,}件)',
+                        message=f"""
+EventLogクリーンアップで大量のレコードが削除されました。
+
+削除件数: {deleted_count:,}件
+保持期間: {days}日
+削除日時: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}
+テーブルサイズ: {table_size}
+
+※これは自動通知です。異常なアクセスパターンがないか確認してください。
+                        """.strip(),
+                        fail_silently=True,
+                    )
+                    self.stdout.write(self.style.WARNING(f'\n📧 管理者にアラートメールを送信しました'))
+                except Exception as e:
+                    self.stdout.write(self.style.ERROR(f'\n⚠️ メール送信エラー: {e}'))
         
         # 残存ログ数を表示
         remaining_count = EventLog.objects.count()
@@ -90,5 +122,5 @@ class Command(BaseCommand):
         if dry_run:
             self.stdout.write(self.style.WARNING('DRY RUN モード: 変更は保存されていません'))
         else:
-            self.stdout.write(self.style.SUCCESS('クリーンアップが完了しました！'))
+            self.stdout.write(self.style.SUCCESS('クリーンアップが完了しました!'))
         self.stdout.write(f'{"="*60}\n')

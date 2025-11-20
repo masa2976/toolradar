@@ -17,6 +17,7 @@ django-taggit==5.0.1
 django-redis==5.4.0
 django-autoslug==1.9.9
 django-simple-history==3.10.1
+APScheduler==3.10.4  # タスクスケジューラー
 
 # === Wagtail拡張 ===
 wagtail-modeladmin==2.2.0

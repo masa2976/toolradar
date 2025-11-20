@@ -2,7 +2,7 @@ from django.contrib import admin
 from taggit.models import Tag as TaggitTag
 from import_export import resources, fields, widgets
 from import_export.admin import ImportExportModelAdmin
-from .models import Tag
+from .models import Tag, TagMapping
 
 # django-taggitの標準Tag管理画面を非表示にする
 admin.site.unregister(TaggitTag)
@@ -133,3 +133,43 @@ class TagAdmin(ImportExportModelAdmin):
             return ', '.join(obj.synonyms[:3])  # 最初の3つのみ表示
         return '-'
     get_synonyms_display.short_description = '表記ゆれ'
+
+
+@admin.register(TagMapping)
+class TagMappingAdmin(admin.ModelAdmin):
+    """タグマッピング管理画面"""
+    
+    list_display = [
+        'canonical_name',
+        'category',
+        'get_variations_display',
+    ]
+    
+    list_filter = [
+        'category',
+    ]
+    
+    search_fields = [
+        'canonical_name',
+        'variations',
+    ]
+    
+    fieldsets = (
+        ('基本情報', {
+            'fields': ('canonical_name', 'category')
+        }),
+        ('表記バリエーション', {
+            'fields': ('variations',),
+            'description': 'カンマ区切りで入力（例: bb,ｂｂ,ボリバン,Bollinger Bands）'
+        }),
+    )
+    
+    def get_variations_display(self, obj):
+        """バリエーションを表示"""
+        if obj.variations:
+            display = ', '.join(obj.variations[:5])  # 最初の5つのみ表示
+            if len(obj.variations) > 5:
+                display += f'... (計{len(obj.variations)}個)'
+            return display
+        return '-'
+    get_variations_display.short_description = 'バリエーション'

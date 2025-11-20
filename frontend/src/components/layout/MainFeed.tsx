@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { CategorySection } from '@/components/ui/CategorySection'
+import { Separator } from '@/components/ui/separator'
 import { IconFeatureCard } from '@/components/ui/IconFeatureCard'
 import { ImageOverlayCard } from '@/components/ui/ImageOverlayCard'
 import { BlogFeed } from './BlogFeed'
@@ -84,6 +85,48 @@ export function MainFeed() {
         gridCols="grid-cols-3"
         items={priceTypes}
       />
+
+      {/* ========== セクション区切り（ツール→ブログ遷移） ========== */}
+      <section className="mt-16 flex flex-col items-center gap-6">
+        {/* メインCTAボタン */}
+        <Link
+          href="/tools"
+          className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-sm border-2 border-primary bg-transparent px-6 py-3 text-lg font-bold text-primary transition-all duration-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        >
+          <span className="absolute inset-0 bg-gradient-to-r from-primary to-primary/90 translate-y-full transition-transform duration-300 group-hover:translate-y-0" />
+          <span className="relative z-10 flex items-center gap-2">
+            すべてのツールを見る
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="ml-1 transition-transform duration-300 group-hover:translate-x-1"
+            >
+              <path d="M5 12h14" />
+              <path d="m12 5 7 7-7 7" />
+            </svg>
+          </span>
+        </Link>
+        
+        {/* 視覚的な区切り線 */}
+        <Separator className="w-full max-w-4xl my-4" />
+        
+        {/* セクション切り替えの見出し */}
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            投資の学びを深める
+          </h2>
+          <p className="text-sm text-gray-600">
+            FX・株式・仮想通貨の最新情報
+          </p>
+        </div>
+      </section>
 
       {/* 6. ブログセクション */}
       <section>

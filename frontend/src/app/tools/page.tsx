@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, Grid3x3, List, SlidersHorizontal, X } from 'lucide-react';
 import { useTools } from '@/hooks';
@@ -20,15 +21,43 @@ import { ASPWidget } from '@/components/ui/ASPWidget';
 // ============================================
 
 export default function ToolsListPage() {
-  // フィルター状態管理
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState<FilterState>({
-    platforms: [],
-    toolTypes: [],
-    priceType: undefined,
-    tags: [],
-  });
+  // URLクエリパラメータを取得
+  const searchParams = useSearchParams();
+  
+  // URLパラメータから初期値を取得する関数
+  const getInitialFilters = (): FilterState => {
+    const platform = searchParams.get('platform');
+    const toolType = searchParams.get('tool_type');
+    const priceType = searchParams.get('price_type');
+    const tags = searchParams.get('tags');
+    
+    return {
+      platforms: platform ? platform.split(',').map(p => p.toLowerCase()) : [],
+      toolTypes: toolType ? toolType.split(',') : [],
+      priceType: priceType as 'free' | 'paid' | 'freemium' | undefined,
+      tags: tags ? tags.split(',') : [],
+    };
+  };
+  
+  // フィルター状態管理（URLパラメータから初期値を設定）
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+  const [filters, setFilters] = useState<FilterState>(getInitialFilters());
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
+  // URLパラメータが変更された時にフィルターを更新
+  useEffect(() => {
+    const newFilters = getInitialFilters();
+    const newQuery = searchParams.get('q') || '';
+    
+    // 現在の状態と異なる場合のみ更新（無限ループ防止）
+    if (
+      JSON.stringify(newFilters) !== JSON.stringify(filters) ||
+      newQuery !== searchQuery
+    ) {
+      setFilters(newFilters);
+      setSearchQuery(newQuery);
+    }
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
   
   // APIパラメータ構築
   const apiParams: ToolsParams = {
@@ -100,7 +129,10 @@ export default function ToolsListPage() {
           {/* 左サイドバー（デスクトップ） */}
           <aside className="hidden lg:block lg:col-span-3">
             <div className="sticky top-20 space-y-6">
-              <FilterPanel onFilterChange={handleFilterChange} />
+              <FilterPanel 
+                onFilterChange={handleFilterChange} 
+                initialFilters={filters}
+              />
               
               {/* ASPウィジェット */}
               <ASPWidget 
@@ -141,7 +173,10 @@ export default function ToolsListPage() {
                       <SheetTitle>フィルター</SheetTitle>
                     </SheetHeader>
                     <Separator className="my-4" />
-                    <FilterPanel onFilterChange={handleFilterChange} />
+                    <FilterPanel 
+                onFilterChange={handleFilterChange} 
+                initialFilters={filters}
+              />
                   </SheetContent>
                 </Sheet>
                 
