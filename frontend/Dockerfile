@@ -21,6 +21,8 @@ CMD ["npm", "run", "dev"]
 # ビルドステージ
 FROM base AS builder
 
+ENV NODE_ENV=production
+
 COPY package*.json ./
 RUN npm ci
 
