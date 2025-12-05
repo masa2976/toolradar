@@ -1,5 +1,7 @@
 'use client';
 
+import Image from 'next/image';
+import { placeholderDataUrl } from '@/lib/imageUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tool } from '@/types';
@@ -49,7 +51,7 @@ export function ToolCard({
     return (
       <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-300">
         <DollarSign className="w-3 h-3 mr-1" />
-        {tool.price || '有料'}
+        有料
       </Badge>
     );
   };
@@ -78,10 +80,14 @@ export function ToolCard({
       >
       {/* サムネイル画像 */}
       <div className="relative w-full aspect-video overflow-hidden rounded-t-lg bg-muted">
-        <img 
+        <Image 
           src={tool.image_url || '/placeholder-tool.png'} 
-          alt={tool.name}
-          className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
+          alt={`${tool.name}のサムネイル画像`}
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          className="object-contain transition-transform duration-300 group-hover:scale-105"
+          placeholder="blur"
+          blurDataURL={placeholderDataUrl}
         />
         
         {/* リボン表示 */}
@@ -105,14 +111,17 @@ export function ToolCard({
       <CardHeader className="p-4">
         {/* プラットフォームバッジ */}
         <div className="flex flex-wrap gap-1 mb-2">
-          <Badge 
-            className={cn(
-              getPlatformColor(tool.platform),
-              'text-white text-xs px-2 py-0.5'
-            )}
-          >
-            {tool.platform.toUpperCase()}
-          </Badge>
+          {tool.platform.map((p, idx) => (
+            <Badge 
+              key={idx}
+              className={cn(
+                getPlatformColor(p),
+                'text-white text-xs px-2 py-0.5'
+              )}
+            >
+              {p.toUpperCase()}
+            </Badge>
+          ))}
           
           {/* ツールタイプ */}
           <Badge variant="secondary" className="text-xs">

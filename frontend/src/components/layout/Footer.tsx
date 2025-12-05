@@ -7,8 +7,9 @@ const footerLinks = {
     { label: 'お問い合わせ', href: '/contact' },
   ],
   legal: [
-    { label: 'プライバシーポリシー', href: '/privacy' },
+    { label: 'プライバシーポリシー', href: '/privacy-policy' },
     { label: '利用規約', href: '/terms' },
+    { label: '免責事項', href: '/disclaimer' },
   ],
   social: [
     { icon: Twitter, href: 'https://twitter.com/toolradar', label: 'Twitter' },

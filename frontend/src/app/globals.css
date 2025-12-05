@@ -613,3 +613,25 @@
     font-size: 14px;
   }
 }
+
+/* ========================================
+   Wagtail リッチテキスト内のリンク修正
+   ブログ記事コンテンツ内のリンクのみに適用
+   ======================================== */
+
+/* ブログ記事本文内のリンクのみスタイル適用 */
+.blog-content a:not([class]),
+.blog-content p a,
+.blog-content li a {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  text-decoration: underline;
+  color: #2563eb; /* blue-600 */
+  transition: color 0.2s ease;
+}
+
+.blog-content a:not([class]):hover,
+.blog-content p a:hover,
+.blog-content li a:hover {
+  color: #1e40af; /* blue-800 */
+}

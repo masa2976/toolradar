@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% load wagtailcore_tags wagtailsettings_tags %}
+{% get_settings %}
+
+{% block extra_css %}
+<style>
+    .form-intro {
+        margin-bottom: 30px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 5px;
+    }
+    .contact-form {
+        max-width: 600px;
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #212529;
+    }
+    .form-group label .required {
+        color: #dc3545;
+        margin-left: 3px;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="email"],
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+    }
+    .form-group textarea {
+        min-height: 150px;
+        resize: vertical;
+    }
+    .submit-btn {
+        display: inline-block;
+        background: #007bff;
+        color: #fff;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 5px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .submit-btn:hover {
+        background: #0056b3;
+    }
+    .form-errors {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    .form-errors ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>{{ page.title }}</h1>
+
+{% if page.intro %}
+<div class="form-intro">
+    {% include_block page.intro %}
+</div>
+{% endif %}
+
+<form action="{% pageurl page %}" method="POST" class="contact-form">
+    {% csrf_token %}
+
+    {% if form.errors %}
+    <div class="form-errors">
+        <strong>入力内容に問題があります：</strong>
+        <ul>
+        {% for field in form %}
+            {% for error in field.errors %}
+            <li>{{ field.label }}: {{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% for field in form.visible_fields %}
+    <div class="form-group">
+        <label for="{{ field.id_for_label }}">
+            {{ field.label }}
+            {% if field.field.required %}<span class="required">*</span>{% endif %}
+        </label>
+        {{ field }}
+        {% if field.help_text %}
+        <small style="color: #6c757d;">{{ field.help_text }}</small>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <button type="submit" class="submit-btn">送信する</button>
+</form>
+{% endblock %}

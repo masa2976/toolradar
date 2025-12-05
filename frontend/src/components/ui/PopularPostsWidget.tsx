@@ -19,7 +19,7 @@ export function PopularPostsWidget({
   // 最新記事を取得（将来的にview_countでソート可能）
   const { data, isPending, isError } = useBlogPosts({ 
     page: 1, 
-    page_size: limit 
+    limit 
   })
 
   // ローディング状態

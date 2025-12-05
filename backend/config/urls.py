@@ -27,6 +27,7 @@ urlpatterns = [
     path('documents/', include(wagtaildocs_urls)),
     
     # === REST API エンドポイント ===
+    path('api/', include('apps.core.urls')),  # Core API (Contact Form)
     path('api/', include('tools.urls')),      # Tools API
     path('api/', include('blog.urls')),       # Blog API
     path('api/', include('tags.urls')),       # Tags API

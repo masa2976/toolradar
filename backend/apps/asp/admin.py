@@ -6,9 +6,9 @@ from .models import ASPAd
 @admin.register(ASPAd)
 class ASPAdAdmin(admin.ModelAdmin):
     """ASP広告管理画面（業界標準設計）"""
-    
+
     list_display = [
-        'name', 
+        'name',
         'placement_badge',
         'period_status',
         'performance_stats',
@@ -17,20 +17,20 @@ class ASPAdAdmin(admin.ModelAdmin):
         'is_active',
         'created_at'
     ]
-    
+
     list_filter = [
         'is_active',
         'placement',
         'start_date',
         'end_date',
     ]
-    
+
     search_fields = [
         'name',
     ]
-    
+
     ordering = ['placement', 'priority', '-weight']
-    
+
     fieldsets = [
         ('基本情報', {
             'fields': ['name', 'is_active']
@@ -55,7 +55,7 @@ class ASPAdAdmin(admin.ModelAdmin):
             'classes': ['collapse']
         }),
     ]
-    
+
     readonly_fields = [
         'impressions',
         'clicks',
@@ -63,9 +63,9 @@ class ASPAdAdmin(admin.ModelAdmin):
         'created_at',
         'updated_at'
     ]
-    
+
     # カスタム表示メソッド
-    
+
     def placement_badge(self, obj):
         """配置場所をバッジ表示"""
         colors = {
@@ -88,12 +88,12 @@ class ASPAdAdmin(admin.ModelAdmin):
             obj.get_placement_display()
         )
     placement_badge.short_description = '配置場所'
-    
+
     def period_status(self, obj):
         """期限ステータス表示"""
         if not obj.is_active:
             return format_html('<span style="color: #dc3545;">❌ 無効</span>')
-        
+
         if obj.is_valid_period():
             if obj.end_date:
                 return format_html(
@@ -111,21 +111,21 @@ class ASPAdAdmin(admin.ModelAdmin):
                         obj.start_date.strftime('%Y/%m/%d')
                     )
             return format_html('<span style="color: #dc3545;">⏹ 期限切れ</span>')
-    
+
     period_status.short_description = 'ステータス'
-    
+
     def performance_stats(self, obj):
         """効果測定の要約表示"""
         if obj.impressions == 0:
             return format_html('<span style="color: #6c757d;">データなし</span>')
-        
+
         ctr = obj.ctr
         ctr_color = '#28a745' if ctr >= 2.0 else '#ffc107' if ctr >= 1.0 else '#dc3545'
-        
+
         # フォーマット済みの値を先に作成
         impressions_formatted = f'{obj.impressions:,}'
         ctr_formatted = f'{ctr:.2f}'
-        
+
         return format_html(
             '<div style="font-size: 11px;">'
             '表示: <strong>{}</strong> | '
@@ -138,28 +138,28 @@ class ASPAdAdmin(admin.ModelAdmin):
             ctr_formatted
         )
     performance_stats.short_description = '効果測定'
-    
+
     def ctr_display(self, obj):
         """CTRの詳細表示（readonly_fields用）"""
         return f'{obj.ctr:.2f}%'
     ctr_display.short_description = 'CTR（クリック率）'
-    
+
     # アクション
-    
+
     actions = ['activate_ads', 'deactivate_ads', 'reset_stats']
-    
+
     def activate_ads(self, request, queryset):
         """選択した広告を有効化"""
         count = queryset.update(is_active=True)
         self.message_user(request, f'{count}件の広告を有効化しました。')
     activate_ads.short_description = '選択した広告を有効化'
-    
+
     def deactivate_ads(self, request, queryset):
         """選択した広告を無効化"""
         count = queryset.update(is_active=False)
         self.message_user(request, f'{count}件の広告を無効化しました。')
     deactivate_ads.short_description = '選択した広告を無効化'
-    
+
     def reset_stats(self, request, queryset):
         """効果測定をリセット"""
         count = queryset.update(impressions=0, clicks=0)

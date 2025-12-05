@@ -41,7 +41,7 @@ export function Header() {
         {/* モバイルハンバーガーメニュー（左側） */}
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="lg:hidden">
+            <Button variant="ghost" size="icon" className="lg:hidden" suppressHydrationWarning>
               <Menu className="h-6 w-6" />
               <span className="sr-only">メニューを開く</span>
             </Button>

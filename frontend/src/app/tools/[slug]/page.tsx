@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
+import { placeholderDataUrl } from '@/lib/imageUtils'
 import Link from 'next/link'
 import { toolsApi } from '@/lib/api'
 import { Badge } from '@/components/ui/badge'
@@ -15,6 +16,9 @@ import {
 } from 'lucide-react'
 import { ASPAdSpace } from '@/components/ui/ASPAdSpace'
 import { AdSense } from '@/components/ui/AdSense'
+import { RelatedTools } from '@/components/ui/RelatedTools'
+import { ToolEventTracker } from '@/components/features/ToolEventTracker'
+import { ShareButtons } from '@/components/features/ShareButtons'
 
 // ============================================
 // データ取得関数（共通化）
@@ -48,8 +52,94 @@ export default async function ToolDetailPage({ params }: PageProps) {
     notFound()
   }
   
+  // ============================================
+  // 構造化データ生成（Phase SEO-2）
+  // ============================================
+  
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://toolradar.jp'
+  const apiUrl = process.env.API_URL || 'http://backend:8000'
+  const platforms = Array.isArray(tool.platform) ? tool.platform : [tool.platform]
+  
+  // 画像URLの処理
+  const imageUrl = tool.image_url
+    ? (tool.image_url.startsWith('http')
+        ? tool.image_url
+        : `${apiUrl}${tool.image_url}`)
+    : `${siteUrl}/default-tool-image.jpg`
+  
+  // SoftwareApplication構造化データ
+  const softwareSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: tool.name,
+    applicationCategory: 'FinanceApplication',
+    applicationSubCategory: 'TradingTool',
+    operatingSystem: platforms.join(', '),
+    description: tool.short_description,
+    image: imageUrl,
+    url: tool.external_url,
+    offers: {
+      '@type': 'Offer',
+      price: tool.price_type === 'free' ? '0' : (tool.price || '未定'),
+      priceCurrency: 'USD',
+    },
+    ...(tool.week_score && {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: Math.min((tool.week_score / 50), 5).toFixed(1),
+        bestRating: '5',
+        ratingCount: tool.stats?.week_views || 0,
+      },
+    }),
+    author: {
+      '@type': 'Organization',
+      name: tool.metadata?.developer || 'Unknown',
+    },
+  }
+  
+  // BreadcrumbList構造化データ
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'ホーム',
+        item: siteUrl,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'ツール一覧',
+        item: `${siteUrl}/tools`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: tool.name,
+        item: `${siteUrl}/tools/${slug}`,
+      },
+    ],
+  }
+  
   return (
-    <div className="container mx-auto px-4 py-8">
+    <>
+      {/* イベントトラッキング（view/duration） */}
+      <ToolEventTracker toolId={tool.id} />
+      
+      {/* 構造化データ（JSON-LD） */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      
+      {/* メインコンテンツ */}
+      <div className="container mx-auto px-4 py-8">
       {/* パンくずリスト */}
       <nav className="mb-6 text-sm text-muted-foreground">
         <Link href="/" className="hover:text-foreground">
@@ -77,7 +167,7 @@ export default async function ToolDetailPage({ params }: PageProps) {
               ))}
               
               {/* リボンバッジ */}
-              {tool.ribbons.map((ribbon) => (
+              {tool.ribbons?.map((ribbon) => (
                 <Badge 
                   key={ribbon}
                   variant={
@@ -100,13 +190,15 @@ export default async function ToolDetailPage({ params }: PageProps) {
             </p>
 
             {/* タグ */}
-            <div className="mb-6 flex flex-wrap gap-2">
-              {tool.tags.map((tag) => (
-                <Badge key={tag.id} variant="outline">
-                  {tag.name}
-                </Badge>
-              ))}
-            </div>
+            {tool.tags && tool.tags.length > 0 && (
+              <div className="mb-6 flex flex-wrap gap-2">
+                {tool.tags.map((tag) => (
+                  <Badge key={tag.id} variant="outline">
+                    {tag.name}
+                  </Badge>
+                ))}
+              </div>
+            )}
 
             {/* 統計情報 */}
             <div className="flex flex-wrap gap-6 text-sm">
@@ -125,7 +217,7 @@ export default async function ToolDetailPage({ params }: PageProps) {
                 <span>{tool.week_views} PV</span>
               </div>
               
-              {tool.week_shares > 0 && (
+              {(tool.week_shares ?? 0) > 0 && (
                 <div className="flex items-center gap-2">
                   <Share2 className="h-4 w-4 text-muted-foreground" />
                   <span>{tool.week_shares} シェア</span>
@@ -134,15 +226,27 @@ export default async function ToolDetailPage({ params }: PageProps) {
             </div>
           </div>
 
+          {/* SNSシェアボタン */}
+          <div className="mb-6">
+            <ShareButtons 
+              toolId={tool.id}
+              toolName={tool.name}
+              toolSlug={slug}
+            />
+          </div>
+
           {/* サムネイル画像 */}
           {tool.image_url && (
             <div className="relative mb-8 aspect-video overflow-hidden rounded-lg border">
               <Image
                 src={tool.image_url}
-                alt={tool.name}
+                alt={`${tool.name}のスクリーンショット - ${tool.tool_type}ツール`}
                 fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 66vw, 800px"
                 className="object-contain"
                 priority
+                placeholder="blur"
+                blurDataURL={placeholderDataUrl}
               />
             </div>
           )}
@@ -155,7 +259,7 @@ export default async function ToolDetailPage({ params }: PageProps) {
             <CardContent>
               <div 
                 className="prose prose-gray max-w-none dark:prose-invert"
-                dangerouslySetInnerHTML={{ __html: tool.long_description }}
+                dangerouslySetInnerHTML={{ __html: tool.long_description ?? '' }}
               />
             </CardContent>
           </Card>
@@ -216,21 +320,8 @@ export default async function ToolDetailPage({ params }: PageProps) {
             className="my-8"
           />
 
-          {/* 関連ツールセクション（将来実装） */}
-          <section className="mb-8 border-t pt-6">
-            <h2 className="mb-4 text-2xl font-bold">関連ツール</h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {/* プレースホルダー */}
-              {[1, 2, 3].map((i) => (
-                <Card key={i}>
-                  <CardContent className="p-4">
-                    <div className="mb-2 h-32 animate-pulse rounded bg-gray-200" />
-                    <div className="h-4 animate-pulse rounded bg-gray-200" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
+          {/* 関連ツールセクション */}
+          <RelatedTools toolSlug={slug} />
 
           {/* ========== ASP広告（ツール詳細下部） ========== */}
           <ASPAdSpace
@@ -332,16 +423,19 @@ export default async function ToolDetailPage({ params }: PageProps) {
           </Card>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   )
 }
 
 // ============================================
-// メタデータ生成（SEO最適化）
+// メタデータ生成（SEO最適化 - Phase SEO-2）
 // ============================================
 
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params
+  const apiUrl = process.env.API_URL || 'http://backend:8000'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://toolradar.jp'
   
   // 共通関数を使用（エラーを投げない）
   const tool = await getTool(slug)
@@ -354,21 +448,58 @@ export async function generateMetadata({ params }: PageProps) {
     }
   }
   
+  // プラットフォーム配列化
+  const platforms = Array.isArray(tool.platform) ? tool.platform : [tool.platform]
+  
+  // 画像URLの処理（相対パスの場合は絶対パスに変換）
+  const imageUrl = tool.image_url
+    ? (tool.image_url.startsWith('http')
+        ? tool.image_url
+        : `${apiUrl}${tool.image_url}`)
+    : `${siteUrl}/default-tool-image.jpg`
+  
+  // ページURL
+  const pageUrl = `${siteUrl}/tools/${slug}`
+  
+  // キーワード生成
+  const keywords = [
+    tool.name,
+    ...platforms,
+    tool.tool_type,
+    ...(tool.tags?.map(tag => tag.name) || []),
+  ].join(', ')
+  
   // 正常時のメタデータ
   return {
-    title: `${tool.name} - ${(Array.isArray(tool.platform) ? tool.platform : [tool.platform]).join('/')}ツール | ToolRadar`,
+    title: `${tool.name} - ${platforms.join('/')}対応 | ToolRadar`,
     description: tool.short_description,
+    keywords: keywords,
     openGraph: {
       title: tool.name,
       description: tool.short_description,
-      images: tool.image_url ? [tool.image_url] : [],
+      url: pageUrl,
+      siteName: 'ToolRadar',
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: tool.name,
+        },
+      ],
+      locale: 'ja_JP',
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
       title: tool.name,
       description: tool.short_description,
-      images: tool.image_url ? [tool.image_url] : [],
+      images: [imageUrl],
+      creator: '@toolradar',
+      site: '@toolradar',
+    },
+    alternates: {
+      canonical: pageUrl,
     },
   }
 }

@@ -8,8 +8,11 @@ import { draftMode } from 'next/headers';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Eye, Clock, AlertCircle, X } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { placeholderDataUrl } from '@/lib/imageUtils';
 import { StreamFieldRenderer } from '@/components/blog/StreamFieldRenderer';
 import { calculateReadingTime } from '@/lib/readingTime';
+import { RelatedPosts } from '@/components/ui/RelatedPosts';
 
 
 // ============================================
@@ -22,13 +25,79 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
+  const decodedSlug = decodeURIComponent(slug);
+  const apiUrl = process.env.API_URL || 'http://backend:8000';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://toolradar.jp';
   
-  // TODO: APIから記事情報を取得してメタデータ生成
-  // 現時点では静的なメタデータを返す
-  return {
-    title: `記事 | ToolRadar`,
-    description: '投資ツール・トレード戦略の解説記事',
-  };
+  try {
+    const response = await fetch(
+      `${apiUrl}/api/blog/posts/${decodedSlug}/`,
+      {
+        next: { revalidate: 3600 },
+      }
+    );
+    
+    if (!response.ok) {
+      return {
+        title: '記事が見つかりません | ToolRadar',
+        description: 'お探しの記事は見つかりませんでした。',
+      };
+    }
+    
+    const post = await response.json();
+    const pageUrl = `${siteUrl}/blog/${slug}`;
+    
+    // アイキャッチ画像のURL取得
+    const imageUrl = post.featured_image?.url 
+      ? (post.featured_image.url.startsWith('http') 
+          ? post.featured_image.url 
+          : `${apiUrl}${post.featured_image.url}`)
+      : `${siteUrl}/default-blog-image.jpg`;
+    
+    return {
+      title: `${post.title} | ToolRadar`,
+      description: post.excerpt || post.title,
+      keywords: post.tags?.map((tag: any) => tag.name).join(', '),
+      authors: [{ name: 'ToolRadar編集部' }],
+      openGraph: {
+        title: post.title,
+        description: post.excerpt || post.title,
+        url: pageUrl,
+        siteName: 'ToolRadar',
+        images: [
+          {
+            url: imageUrl,
+            width: 1200,
+            height: 630,
+            alt: post.title,
+          },
+        ],
+        locale: 'ja_JP',
+        type: 'article',
+        publishedTime: post.first_published_at,
+        modifiedTime: post.last_published_at,
+        authors: ['ToolRadar編集部'],
+        tags: post.tags?.map((tag: any) => tag.name),
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: post.title,
+        description: post.excerpt || post.title,
+        images: [imageUrl],
+        creator: '@toolradar',
+        site: '@toolradar',
+      },
+      alternates: {
+        canonical: pageUrl,
+      },
+    };
+  } catch (error) {
+    console.error('Failed to generate metadata:', error);
+    return {
+      title: '記事 | ToolRadar',
+      description: '投資ツール・トレード戦略の解説記事',
+    };
+  }
 }
 
 // ============================================
@@ -65,10 +134,86 @@ export default async function BlogPostPage({ params }: Props) {
     
     const post = await response.json();
     
+    // 構造化データ（Article Schema）
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://toolradar.jp';
+    const pageUrl = `${siteUrl}/blog/${decodedSlug}`;
+    const imageUrl = post.featured_image?.url 
+      ? (post.featured_image.url.startsWith('http') 
+          ? post.featured_image.url 
+          : `${apiUrl}${post.featured_image.url}`)
+      : `${siteUrl}/default-blog-image.jpg`;
+    
+    const articleSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: post.title,
+      description: post.excerpt || post.title,
+      image: imageUrl,
+      datePublished: post.first_published_at,
+      dateModified: post.last_published_at || post.first_published_at,
+      author: {
+        '@type': 'Organization',
+        name: 'ToolRadar編集部',
+        url: siteUrl,
+      },
+      publisher: {
+        '@type': 'Organization',
+        name: 'ToolRadar',
+        logo: {
+          '@type': 'ImageObject',
+          url: `${siteUrl}/logo.png`,
+        },
+        url: siteUrl,
+      },
+      mainEntityOfPage: {
+        '@type': 'WebPage',
+        '@id': pageUrl,
+      },
+      articleSection: post.category?.name || 'ブログ',
+      keywords: post.tags?.map((tag: any) => tag.name).join(', '),
+    };
+    
+    // BreadcrumbList構造化データ
+    const breadcrumbSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'ホーム',
+          item: siteUrl,
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: 'ブログ',
+          item: `${siteUrl}/blog`,
+        },
+        {
+          '@type': 'ListItem',
+          position: 3,
+          name: post.title,
+          item: pageUrl,
+        },
+      ],
+    };
+    
     return (
-      <article className="container mx-auto px-4 py-6 max-w-4xl blog-content">
-        {/* Draft Modeインジケーター */}
-        {isEnabled && <DraftModeIndicator />}
+      <>
+        {/* 構造化データ */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        />
+        
+        <article className="container mx-auto px-4 py-6 max-w-4xl blog-content">
+          {/* Draft Modeインジケーター */}
+          {isEnabled && <DraftModeIndicator />}
         
         {/* 記事ヘッダー */}
         <BlogPostHeader post={post} />
@@ -76,9 +221,15 @@ export default async function BlogPostPage({ params }: Props) {
         {/* 記事本文 */}
         <BlogPostContent post={post} />
 
-        {/* 関連ツール */}
-        <RelatedTools tools={post.related_tools || []} />
-      </article>
+          {/* 関連ツール */}
+          <RelatedTools tools={post.related_tools || []} />
+
+          {/* 関連記事セクション */}
+          <div className="border-t border-border pt-8 mt-8">
+            <RelatedPosts postSlug={decodedSlug} />
+          </div>
+        </article>
+      </>
     );
   } catch (error) {
     console.error('Failed to fetch blog post:', error);
@@ -154,11 +305,16 @@ function BlogPostContent({ post }: { post: any }) {
     <div className="prose prose-lg max-w-none mb-8">
       {/* アイキャッチ画像 */}
       {post.featured_image && (
-        <div className="mb-6 rounded-lg overflow-hidden">
-          <img 
+        <div className="relative mb-6 aspect-video rounded-lg overflow-hidden">
+          <Image 
             src={post.featured_image.url || post.featured_image} 
-            alt={post.featured_image.alt || post.title}
-            className="w-full h-auto"
+            alt={post.featured_image.alt || `${post.title}のアイキャッチ画像`}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 800px"
+            className="object-cover"
+            priority
+            placeholder="blur"
+            blurDataURL={placeholderDataUrl}
           />
         </div>
       )}

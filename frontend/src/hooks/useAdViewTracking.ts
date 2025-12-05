@@ -54,7 +54,8 @@ export function useAdViewTracking(
     }
 
     // IAB基準: 50%表示 + 1秒間継続 + 要素が見えている
-    if (inView && entry?.isVisible) {
+    // NOTE: trackVisibility: trueが有効な場合、inViewは要素が可視であることを保証
+    if (inView) {
       // 指定時間後にカウント（デフォルト: 1秒）
       timerRef.current = setTimeout(() => {
         // まだトラッキングされていない場合のみカウント
@@ -79,7 +80,7 @@ export function useAdViewTracking(
         timerRef.current = null
       }
     }
-  }, [adId, inView, entry?.isVisible, trackingDelay, enabled, trackImpression])
+  }, [adId, inView, trackingDelay, enabled, trackImpression])
 
   return ref
 }

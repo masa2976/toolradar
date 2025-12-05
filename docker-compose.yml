@@ -62,7 +62,7 @@ services:
     stdin_open: true
     tty: true
 
-  # Next.js
+  # Next.js (ボリュームマウントあり - ホットリロード対応)
   frontend:
     build:
       context: ./frontend
@@ -71,16 +71,16 @@ services:
     container_name: toolradar_frontend
     command: npm run dev
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
+      - ./frontend:/app                    # ソースコードをマウント
+      - /app/node_modules                  # node_modulesはコンテナ内を使用
+      - /app/.next                         # .nextビルドキャッシュはコンテナ内
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=http://localhost:8000
       - API_URL=http://backend:8000
-      - TURBOPACK=0
+      - WATCHPACK_POLLING=true             # Windowsファイル監視対応
     depends_on:
       - backend
     stdin_open: true

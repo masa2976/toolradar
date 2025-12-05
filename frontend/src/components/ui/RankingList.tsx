@@ -119,7 +119,7 @@ export function RankingList({
                       variant="secondary"
                       className="text-xs"
                     >
-                      {item.tool.platform.toUpperCase()}
+                      {item.tool.platform.map(p => p.toUpperCase()).join(' / ')}
                     </Badge>
                     <Badge variant="outline" className="text-xs">
                       {item.tool.tool_type}

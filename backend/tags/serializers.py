@@ -9,6 +9,7 @@ class TagSerializer(serializers.ModelSerializer):
     """タグのシリアライザ"""
     
     tool_count = serializers.SerializerMethodField()
+    post_count = serializers.SerializerMethodField()
     
     class Meta:
         model = Tag
@@ -20,6 +21,7 @@ class TagSerializer(serializers.ModelSerializer):
             'synonyms',
             'description',
             'tool_count',
+            'post_count',
         ]
         read_only_fields = ['id', 'slug']
     
@@ -27,6 +29,11 @@ class TagSerializer(serializers.ModelSerializer):
         """このタグが付いているツールの数を取得"""
         from tools.models import Tool
         return Tool.objects.filter(tags=obj).count()
+    
+    def get_post_count(self, obj):
+        """このタグが付いている記事の数を取得"""
+        from blog.models import BlogPage
+        return BlogPage.objects.live().filter(tags=obj).count()
 
 
 class TagSimpleSerializer(serializers.ModelSerializer):

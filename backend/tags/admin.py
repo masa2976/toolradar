@@ -99,6 +99,8 @@ class TagAdmin(ImportExportModelAdmin):
         'name',
         'slug',
         'category',
+        'get_tool_count',
+        'get_post_count',
         'get_synonyms_display',
     ]
     list_filter = [
@@ -126,6 +128,20 @@ class TagAdmin(ImportExportModelAdmin):
             'classes': ('collapse',)
         }),
     )
+    
+    def get_tool_count(self, obj):
+        """ツール数を表示"""
+        from tools.models import Tool
+        count = Tool.objects.filter(tags=obj).count()
+        return count
+    get_tool_count.short_description = 'ツール数'
+    
+    def get_post_count(self, obj):
+        """記事数を表示"""
+        from blog.models import BlogPage
+        count = BlogPage.objects.live().filter(tags=obj).count()
+        return count
+    get_post_count.short_description = '記事数'
     
     def get_synonyms_display(self, obj):
         """表記ゆれを表示"""

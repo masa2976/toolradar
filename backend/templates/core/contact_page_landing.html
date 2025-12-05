@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load wagtailcore_tags %}
+
+{% block content %}
+<h1>{{ page.title }}</h1>
+
+<div class="thank-you-message" style="background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 20px; border-radius: 5px; margin-bottom: 30px;">
+    <strong>✅ 送信完了</strong>
+    {% if page.thank_you_text %}
+    <div style="margin-top: 10px;">
+        {% include_block page.thank_you_text %}
+    </div>
+    {% else %}
+    <p style="margin-top: 10px;">お問い合わせありがとうございます。内容を確認の上、折り返しご連絡させていただきます。</p>
+    {% endif %}
+</div>
+
+<p>
+    <a href="/" style="display: inline-block; background: #007bff; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">トップページに戻る</a>
+</p>
+{% endblock %}

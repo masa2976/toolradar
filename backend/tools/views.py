@@ -1,7 +1,9 @@
 """
 Views for Tools API
 """
+from django.db import models
 from rest_framework import viewsets, filters
+from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import rest_framework as django_filters
 from .models import Tool
@@ -63,6 +65,7 @@ class ToolViewSet(viewsets.ReadOnlyModelViewSet):
     
     list: ツール一覧取得（検索・フィルタリング対応）
     retrieve: ツール詳細取得
+    related: 関連ツール取得（SEO内部リンク用）
     """
     queryset = Tool.objects.prefetch_related('tags').all()
     lookup_field = 'slug'
@@ -78,3 +81,58 @@ class ToolViewSet(viewsets.ReadOnlyModelViewSet):
         if self.action == 'list':
             return ToolListSerializer
         return ToolSerializer
+    
+    @action(detail=True, methods=['get'])
+    def related(self, request, slug=None):
+        """
+        関連ツール取得API（SEO内部リンク用）
+        
+        アルゴリズム:
+        1. 同じタグを持つツールを取得
+        2. タグ一致数でスコアリング
+        3. 同じplatform/tool_typeで追加スコア
+        4. スコア順でソート、最大6件返却
+        """
+        from django.db.models import Count, Case, When, IntegerField, Value
+        from rest_framework.response import Response
+        
+        tool = self.get_object()
+        tag_ids = list(tool.tags.values_list('id', flat=True))
+        
+        if not tag_ids:
+            # タグがない場合は同じplatform/tool_typeで取得
+            related_tools = Tool.objects.filter(
+                platform=tool.platform,
+                tool_type=tool.tool_type
+            ).exclude(id=tool.id).order_by('-created_at')[:6]
+        else:
+            # タグベースで関連ツールを取得
+            related_tools = Tool.objects.filter(
+                tags__id__in=tag_ids
+            ).exclude(
+                id=tool.id
+            ).annotate(
+                # タグ一致数をカウント
+                tag_match_count=Count('tags', filter=models.Q(tags__id__in=tag_ids)),
+                # 同じplatformなら+2点
+                platform_match=Case(
+                    When(platform=tool.platform, then=Value(2)),
+                    default=Value(0),
+                    output_field=IntegerField()
+                ),
+                # 同じtool_typeなら+1点
+                type_match=Case(
+                    When(tool_type=tool.tool_type, then=Value(1)),
+                    default=Value(0),
+                    output_field=IntegerField()
+                ),
+            ).annotate(
+                # 総合スコア = タグ一致数 + platform + tool_type
+                relevance_score=models.F('tag_match_count') + models.F('platform_match') + models.F('type_match')
+            ).order_by('-relevance_score', '-created_at').distinct()[:6]
+        
+        serializer = ToolListSerializer(related_tools, many=True)
+        return Response({
+            'count': len(serializer.data),
+            'results': serializer.data
+        })

@@ -4,8 +4,12 @@ import { useBlogPosts } from '@/hooks/useBlog'
 import { BlogCard } from '@/components/ui/BlogCard'
 import { Loader2 } from 'lucide-react'
 
-export function BlogFeed() {
-  const { data, isPending, error } = useBlogPosts()
+interface BlogFeedProps {
+  limit?: number;
+}
+
+export function BlogFeed({ limit }: BlogFeedProps) {
+  const { data, isPending, error } = useBlogPosts({ limit })
 
   if (isPending) {
     return (

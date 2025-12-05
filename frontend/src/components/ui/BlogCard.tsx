@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
+import { placeholderDataUrl } from '@/lib/imageUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BlogPost } from '@/types';
@@ -110,10 +112,14 @@ export function BlogCard({
           'relative overflow-hidden bg-muted',
           isHorizontal ? 'w-2/5 min-h-full' : 'w-full aspect-video'
         )}>
-          <img 
+          <Image 
             src={post.featured_image || '/placeholder-blog.png'} 
-            alt={post.title}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            alt={`${post.title}のアイキャッチ画像`}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            placeholder="blur"
+            blurDataURL={placeholderDataUrl}
           />
           
           {/* カテゴリバッジ（画像上） */}

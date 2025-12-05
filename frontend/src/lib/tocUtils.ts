@@ -70,6 +70,9 @@ export function extractHeadings(blocks: any[]): TocItem[] {
 /**
  * 見出しテキストからIDを生成（既存の見出しと重複しないように）
  */
-export function generateHeadingId(text: string, index: number): string {
-  return `heading-${index}-${slugify(text)}`;
+export function generateHeadingId(text: string, index?: number): string {
+  if (index !== undefined) {
+    return `heading-${index}-${slugify(text)}`;
+  }
+  return `heading-${slugify(text)}`;
 }

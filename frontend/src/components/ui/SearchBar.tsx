@@ -13,6 +13,7 @@ interface SearchBarProps {
   debounceMs?: number;
   isLoading?: boolean;
   className?: string;
+  defaultValue?: string;
 }
 
 export function SearchBar({ 
@@ -20,9 +21,10 @@ export function SearchBar({
   placeholder = 'ツールを検索...',
   debounceMs = 300,
   isLoading = false,
-  className
+  className,
+  defaultValue = ''
 }: SearchBarProps) {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(defaultValue);
   const [debouncedQuery] = useDebounce(query, debounceMs);
   const inputRef = useRef<HTMLInputElement>(null);
 

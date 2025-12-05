@@ -16,7 +16,28 @@ const popularTags = [
   { name: 'EUR/USD', slug: 'eurusd' },
 ]
 
-export function HeroSection() {
+/**
+ * HeroSectionのProps
+ */
+interface HeroSectionProps {
+  /** ツール総数（動的表示用） */
+  toolCount?: number
+}
+
+/**
+ * ツール数に応じた表現を生成
+ * @param count - ツール総数
+ * @returns 表示用テキスト
+ */
+function getToolCountText(count: number): string {
+  if (count === 0) return ''                        // フォールバック用
+  if (count < 30) return `厳選${count}件`           // 少数は「厳選」で価値を強調
+  if (count < 100) return `${count}件`              // 中規模はそのまま
+  if (count < 500) return `${count}件以上`          // 100件超えたら「以上」OK
+  return `${Math.floor(count / 100) * 100}件以上`   // 500+は丸める
+}
+
+export function HeroSection({ toolCount }: HeroSectionProps) {
   const router = useRouter()
   const [isSearching, setIsSearching] = useState(false)
 
@@ -33,6 +54,12 @@ export function HeroSection() {
     router.push(`/?tags=${slug}`)
   }
 
+  // 動的H1テキスト生成
+  const countText = toolCount ? getToolCountText(toolCount) : ''
+  const h1Text = countText 
+    ? `${countText}のFX自動売買・分析ツールを無料比較`
+    : 'FX自動売買・分析ツールを無料で比較'
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-500 to-blue-400 py-16 sm:py-20">
       {/* 背景装飾 */}
@@ -41,16 +68,14 @@ export function HeroSection() {
       <div className="container relative mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
           {/* キャッチコピー */}
-          <h1 className="mb-4 text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl">
-            投資ツールの
-            <br className="hidden sm:inline" />
-            最適解を見つけよう
+          <h1 className="mb-4 text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
+            {h1Text}
           </h1>
           
           <p className="mb-8 text-lg text-blue-50 sm:text-xl">
-            MT4/MT5/TradingViewのツール検索から投資ノウハウまで、
+            MT4・MT5・TradingView対応。毎週更新のランキングで、
             <br className="hidden sm:inline" />
-            すべてがここに。
+            今注目のEA・インジケーターをチェック。
           </p>
 
           {/* 検索バー */}

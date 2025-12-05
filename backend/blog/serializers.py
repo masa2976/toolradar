@@ -190,6 +190,7 @@ class BlogPageListSerializer(serializers.Serializer):
     
     # メタ情報
     published_at = serializers.DateTimeField(source='first_published_at', read_only=True)
+    updated_at = serializers.DateTimeField(source='last_published_at', read_only=True)  # SEO: sitemap.xmlで最終更新日として使用
     view_count = serializers.IntegerField(read_only=True, default=0)
     
     def get_featured_image_thumbnail(self, obj):
@@ -200,4 +201,4 @@ class BlogPageListSerializer(serializers.Serializer):
     
     def get_tag_names(self, obj):
         """タグ名のリストを取得"""
-        return [tag.name for tag in obj.tags.all()[:5]]  # 最大5個まで
+        return [tag.name for tag in obj.tags.all()[:5]]  # 最大5個まで  # 最大5個まで

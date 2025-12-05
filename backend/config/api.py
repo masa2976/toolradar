@@ -14,12 +14,23 @@ from rest_framework.response import Response
 api_router = WagtailAPIRouter("wagtailapi")
 
 
+class CustomPagesAPIViewSet(PagesAPIViewSet):
+    """
+    カスタムPages APIビューセット
+    
+    Note: RichTextFieldの変換はモデルのapi_fieldsで定義
+    """
+    pass
+
+
 class PagePreviewAPIViewSet(PagesAPIViewSet):
     """
     プレビュー用のカスタムAPIビューセット
     
     wagtail-headless-previewが生成したトークンを検証し、
     プレビューページのデータを返す
+    
+    Note: RichTextFieldの変換はモデルのapi_fieldsで定義
     """
     
     known_query_parameters = PagesAPIViewSet.known_query_parameters.union(
@@ -70,8 +81,8 @@ class PagePreviewAPIViewSet(PagesAPIViewSet):
         return page
 
 
-# 通常のPages APIエンドポイントを登録（StandardPage等のページ取得用）
-api_router.register_endpoint("pages", PagesAPIViewSet)
+# カスタムPages APIエンドポイントを登録（RichText変換付き）
+api_router.register_endpoint("pages", CustomPagesAPIViewSet)
 
 # PagePreviewAPIViewSetをAPIルーターに登録
 api_router.register_endpoint("page_preview", PagePreviewAPIViewSet)

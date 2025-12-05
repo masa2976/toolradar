@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { placeholderDataUrl } from '@/lib/imageUtils'
 import { cn } from '@/lib/utils'
 
 interface ImageOverlayCardProps {
@@ -40,9 +41,12 @@ export function ImageOverlayCard({
       <div className="absolute inset-0">
         <Image
           src={backgroundImage}
-          alt={label}
+          alt={`${label} - ${description}`}
           fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 400px"
           className="object-cover transition-transform duration-500 group-hover:scale-110"
+          placeholder="blur"
+          blurDataURL={placeholderDataUrl}
         />
       </div>
 

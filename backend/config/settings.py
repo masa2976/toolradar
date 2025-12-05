@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     
     # Wagtail apps
     'wagtail.contrib.forms',
+    'wagtail.contrib.settings',  # Site Settings
     'wagtail.api.v2',  # Wagtail API for headless preview
     'wagtail.contrib.redirects',
     'wagtail.contrib.table_block',  # TableBlock support
@@ -72,6 +73,7 @@ INSTALLED_APPS = [
     'debug_toolbar',
     
     # Local apps
+    'apps.core',
     'tools',
     'blog',
     'tags',
@@ -104,6 +106,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'wagtail.contrib.settings.context_processors.settings',
             ],
         },
     },
@@ -269,6 +272,16 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    
+    # レート制限設定（スパム対策）
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',  # 匿名ユーザー全体の制限
+        'contact_burst': '3/min',  # お問い合わせ: 短時間の連続送信制限
+        'contact_sustained': '10/hour',  # お問い合わせ: 長期的なスパム制限
+    },
 }
 
 # DRF Spectacular (OpenAPI/Swagger)
@@ -369,3 +382,53 @@ LOGGING = {
         },
     },
 }
+
+
+# ==============================================================================
+# EMAIL SETTINGS
+# ==============================================================================
+
+# デフォルトの送信元メールアドレス
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@toolradar.jp')
+
+# 開発環境と本番環境でバックエンドを切り替え
+if DEBUG:
+    # 開発環境: コンソールに出力（実際には送信しない）
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    # 本番環境: SMTP経由で実際にメール送信
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+    EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+
+# 管理者への通知メール設定
+# mail_admins()で使用される
+ADMINS = [
+    ('ToolRadar Admin', os.getenv('ADMIN_EMAIL', 'admin@toolradar.jp')),
+]
+
+# サーバーエラー時の送信元
+SERVER_EMAIL = os.getenv('SERVER_EMAIL', 'server@toolradar.jp')
+
+# メール件名のプレフィックス（エラー通知等）
+EMAIL_SUBJECT_PREFIX = '[ToolRadar] '
+
+
+# ==============================================================================
+# GOOGLE reCAPTCHA v3 SETTINGS
+# ==============================================================================
+
+# Google reCAPTCHA v3シークレットキー
+# 取得先: https://www.google.com/recaptcha/admin
+RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY', '')
+
+# reCAPTCHA検証エンドポイント
+RECAPTCHA_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify'
+
+# reCAPTCHAスコア閾値（0.0-1.0、1.0が最も人間らしい）
+# 0.5未満のリクエストをスパムとして拒否
+RECAPTCHA_SCORE_THRESHOLD = 0.5
+

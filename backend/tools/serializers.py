@@ -83,9 +83,10 @@ class ToolListSerializer(serializers.ModelSerializer):
             'image_url',
             'tag_names',
             'created_at',
+            'updated_at',  # SEO: sitemap.xmlで最終更新日として使用
         ]
-        read_only_fields = ['id', 'slug', 'created_at']
+        read_only_fields = ['id', 'slug', 'created_at', 'updated_at']
     
     def get_tag_names(self, obj):
         """タグ名のリストを取得"""
-        return [tag.name for tag in obj.tags.all()[:5]]  # 最大5個まで
+        return [tag.name for tag in obj.tags.all()[:5]]  # 最大5個まで  # 最大5個まで
