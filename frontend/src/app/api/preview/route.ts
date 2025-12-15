@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
   draft.enable();
 
   // ========================================
-  // 4. ページタイプに応じてリダイレクト
+  // 4. ページタイプに応じてリダイレクト（トークン付き）
   // ========================================
   // 日本語slugを適切にエンコード
   const encodedSlug = encodeURIComponent(slug);
@@ -99,16 +99,23 @@ export async function GET(request: NextRequest) {
   // content_typeで分岐
   let redirectUrl: string;
   
+  // プレビュートークンをクエリパラメータとして渡す
+  const previewParams = new URLSearchParams({
+    preview: 'true',
+    token: token,
+    content_type: contentType || '',
+  });
+  
   if (contentType === 'blog.blogpage') {
-    // BlogPage → /blog/{slug}
-    redirectUrl = `/blog/${encodedSlug}`;
+    // BlogPage → /blog/{slug}?preview=true&token=XXX
+    redirectUrl = `/blog/${encodedSlug}?${previewParams.toString()}`;
   } else if (contentType === 'blog.standardpage') {
-    // StandardPage → /{slug}
-    redirectUrl = `/${encodedSlug}`;
+    // StandardPage → /{slug}?preview=true&token=XXX
+    redirectUrl = `/${encodedSlug}?${previewParams.toString()}`;
   } else {
     // その他のページタイプ（将来の拡張用）
     console.warn('Unknown content type:', contentType);
-    redirectUrl = `/${encodedSlug}`;
+    redirectUrl = `/${encodedSlug}?${previewParams.toString()}`;
   }
   
   console.log('Redirecting to preview:', {

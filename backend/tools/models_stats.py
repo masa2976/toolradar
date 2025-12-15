@@ -22,6 +22,11 @@ class ToolStats(models.Model):
         default=0,
         help_text='直近7日間のページビュー数'
     )
+    week_clicks = models.IntegerField(
+        '週間CTAクリック数',
+        default=0,
+        help_text='直近7日間の外部リンククリック数'
+    )
     week_shares = models.IntegerField(
         '週間シェア数',
         default=0,
@@ -37,7 +42,7 @@ class ToolStats(models.Model):
     week_score = models.FloatField(
         '週間スコア',
         default=0.0,
-        help_text='WeeklyScore = (週間PV × 0.5) + (平均滞在時間 ÷ 10 × 0.3) + (週間シェア数 × 2)',
+        help_text='WeeklyScore = (CTAクリック × 5) + (シェア × 2) + (滞在時間 ÷ 10 × 0.5) + (PV × 0.3)',
         db_index=True
     )
     
@@ -74,12 +79,19 @@ class ToolStats(models.Model):
         return f'{self.tool.name} - Score: {self.week_score:.1f}'
     
     def calculate_score(self):
-        """週間スコアを計算"""
-        # スコア計算式: (週間PV × 0.5) + (平均滞在時間 ÷ 10 × 0.3) + (週間シェア数 × 2)
+        """週間スコアを計算
+        
+        重み付け根拠:
+        - CTAクリック (×5.0): 「このツールを使いたい」最強シグナル
+        - シェア (×2.0): 「他人にも勧めたい」高評価シグナル  
+        - 滞在時間 (÷10 × 0.5): 「じっくり検討」エンゲージメント
+        - PV (×0.3): 「興味がある」最小シグナル
+        """
         score = (
-            (self.week_views * 0.5) +
-            ((self.week_avg_duration / 10) * 0.3) +
-            (self.week_shares * 2)
+            (self.week_clicks * 5.0) +
+            (self.week_shares * 2.0) +
+            ((self.week_avg_duration / 10) * 0.5) +
+            (self.week_views * 0.3)
         )
         self.week_score = round(score, 2)
         return self.week_score
@@ -101,12 +113,13 @@ class ToolStats(models.Model):
 
 
 class EventLog(models.Model):
-    """イベントログ（PV、滞在時間、シェア記録用）"""
+    """イベントログ（PV、滞在時間、シェア、CTAクリック記録用）"""
     
     EVENT_TYPES = [
         ('view', 'ページビュー'),
         ('duration', '滞在時間'),
         ('share', 'シェア'),
+        ('click', 'CTAクリック'),  # 外部リンク（ダウンロード/購入）クリック
     ]
     
     SHARE_PLATFORMS = [

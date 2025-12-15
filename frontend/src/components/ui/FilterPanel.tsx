@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+// React hooks不要（完全制御コンポーネント）
+import { useQuery } from '@tanstack/react-query';
+import { X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -15,6 +16,7 @@ import {
 } from '@/components/ui/accordion';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { tagsApi } from '@/lib/api';
 
 /**
  * フィルター状態の型定義
@@ -27,8 +29,8 @@ export interface FilterState {
 }
 
 interface FilterPanelProps {
-  onFilterChange: (filters: FilterState) => void;
-  initialFilters?: FilterState;  // URLパラメータからの初期値
+  filters: FilterState;  // 現在のフィルター値（制御コンポーネント）
+  onChange: (filters: FilterState) => void;  // フィルター変更時のコールバック
   className?: string;
 }
 
@@ -38,28 +40,29 @@ interface FilterPanelProps {
  * ツール検索用の多機能フィルターパネル。
  * Accordion形式で折りたたみ可能、複数条件フィルター、リセット機能対応。
  */
-export function FilterPanel({ onFilterChange, initialFilters, className }: FilterPanelProps) {
-  const [filters, setFilters] = useState<FilterState>(initialFilters || {
-    platforms: [],
-    toolTypes: [],
-    priceType: undefined,
-    tags: [],
+export function FilterPanel({ filters, onChange, className }: FilterPanelProps) {
+  // APIからタグを取得
+  const { data: tagsData, isPending: tagsLoading } = useQuery({
+    queryKey: ['tags', 'filter-panel'],
+    queryFn: () => tagsApi.getTags(),
+    staleTime: 24 * 60 * 60 * 1000, // 24時間
   });
 
-  // URLパラメータが変更されたときにフィルターを更新
-  useEffect(() => {
-    if (initialFilters) {
-      setFilters(initialFilters);
-    }
-  }, [initialFilters]);
+  // tool_count > 0のタグのみを人気順でソート
+  const popularTags = tagsData
+    ? [...tagsData]
+        .filter((tag) => tag.tool_count > 0)
+        .sort((a, b) => (b.tool_count || 0) - (a.tool_count || 0))
+        .slice(0, 10)
+        .map((tag) => ({ value: tag.slug, label: tag.name }))
+    : [];
 
   /**
    * フィルター変更ハンドラー
+   * 完全制御コンポーネントのため、内部状態を持たず親に変更を通知するのみ
    */
   const handleFilterChange = (newFilters: Partial<FilterState>) => {
-    const updatedFilters = { ...filters, ...newFilters };
-    setFilters(updatedFilters);
-    onFilterChange(updatedFilters);
+    onChange({ ...filters, ...newFilters });
   };
 
   /**
@@ -72,8 +75,7 @@ export function FilterPanel({ onFilterChange, initialFilters, className }: Filte
       priceType: undefined,
       tags: [],
     };
-    setFilters(resetFilters);
-    onFilterChange(resetFilters);
+    onChange(resetFilters);
   };
 
   // プラットフォーム選択肢
@@ -97,16 +99,6 @@ export function FilterPanel({ onFilterChange, initialFilters, className }: Filte
     { value: 'free', label: '無料' },
     { value: 'paid', label: '有料' },
     { value: 'freemium', label: 'Freemium' },
-  ];
-
-  // 人気タグ（例：実際はAPIから取得想定）
-  const popularTags = [
-    { value: 'rsi', label: 'RSI' },
-    { value: 'macd', label: 'MACD' },
-    { value: 'scalping', label: 'スキャルピング' },
-    { value: 'trend_following', label: 'トレンドフォロー' },
-    { value: 'grid', label: 'グリッド' },
-    { value: 'martingale', label: 'マーチンゲール' },
   ];
 
   return (
@@ -227,21 +219,30 @@ export function FilterPanel({ onFilterChange, initialFilters, className }: Filte
           </AccordionTrigger>
           <AccordionContent className="pb-2">
             <div className="flex flex-wrap gap-2 pt-2">
-              {popularTags.map((tag) => (
-                <Badge
-                  key={tag.value}
-                  variant={filters.tags.includes(tag.value) ? 'default' : 'outline'}
-                  className="cursor-pointer hover:bg-primary/90 transition-colors"
-                  onClick={() => {
-                    const newTags = filters.tags.includes(tag.value)
-                      ? filters.tags.filter((t) => t !== tag.value)
-                      : [...filters.tags, tag.value];
-                    handleFilterChange({ tags: newTags });
-                  }}
-                >
-                  {tag.label}
-                </Badge>
-              ))}
+              {tagsLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>読み込み中...</span>
+                </div>
+              ) : popularTags.length === 0 ? (
+                <span className="text-sm text-muted-foreground">タグがありません</span>
+              ) : (
+                popularTags.map((tag) => (
+                  <Badge
+                    key={tag.value}
+                    variant={filters.tags.includes(tag.value) ? 'default' : 'outline'}
+                    className="cursor-pointer hover:bg-primary/90 transition-colors"
+                    onClick={() => {
+                      const newTags = filters.tags.includes(tag.value)
+                        ? filters.tags.filter((t) => t !== tag.value)
+                        : [...filters.tags, tag.value];
+                      handleFilterChange({ tags: newTags });
+                    }}
+                  >
+                    {tag.label}
+                  </Badge>
+                ))
+              )}
             </div>
           </AccordionContent>
         </AccordionItem>

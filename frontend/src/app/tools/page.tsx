@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { getTools } from '@/lib/api/tools';
 import { ToolsClient } from './ToolsClient';
-import type { Platform, ToolType, PriceType } from '@/types';
+import type { Platform, ToolType, PriceType, Tool } from '@/types';
 
 // ============================================
 // ツール一覧ページ（Server Component）
@@ -13,6 +13,8 @@ interface PageProps {
     platform?: string;
     tool_type?: string;
     price_type?: string;
+    tags?: string;
+    ordering?: string;
     page?: string;
   }>;
 }
@@ -27,22 +29,36 @@ export default async function ToolsListPage({ searchParams }: PageProps) {
     platform: resolvedParams.platform as Platform | undefined,
     tool_type: resolvedParams.tool_type as ToolType | undefined,
     price_type: resolvedParams.price_type as PriceType | undefined,
+    tags: resolvedParams.tags,
+    ordering: resolvedParams.ordering,
     page: resolvedParams.page ? parseInt(resolvedParams.page) : undefined,
   };
 
-  // Server Componentでデータ取得
-  const data = await getTools(params);
+  // Server Componentでデータ取得（エラーハンドリング付き）
+  let tools: Tool[] = [];
+  let count = 0;
+  
+  try {
+    const data = await getTools(params);
+    tools = data.results;
+    count = data.count;
+  } catch (error) {
+    // APIエラー時は空の結果を返す（無限ループ防止）
+    console.error('[ToolsListPage] Failed to fetch tools:', error);
+  }
 
   return (
     <Suspense fallback={<div>読み込み中...</div>}>
       <ToolsClient
-        initialTools={data.results}
-        initialCount={data.count}
+        initialTools={tools}
+        initialCount={count}
         initialFilters={{
           q: resolvedParams.q,
           platform: resolvedParams.platform,
           tool_type: resolvedParams.tool_type,
           price_type: resolvedParams.price_type,
+          tags: resolvedParams.tags,
+          ordering: resolvedParams.ordering,
         }}
       />
     </Suspense>

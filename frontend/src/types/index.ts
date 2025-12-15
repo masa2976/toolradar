@@ -82,14 +82,20 @@ export interface ToolsResponse {
 }
 
 /**
+ * ソート順オプション
+ */
+export type ToolsOrdering = '-week_score' | '-created_at' | 'name';
+
+/**
  * ツール検索のクエリパラメータ
  */
 export interface ToolsParams {
   platform?: Platform;
   tool_type?: ToolType;
   price_type?: PriceType;
+  tags?: string;  // タグslug（カンマ区切りで複数指定可）
   q?: string;
-  sort?: '-week_score' | 'created_at' | 'price';
+  ordering?: ToolsOrdering;  // ソート順
   page?: number;
 }
 
@@ -156,7 +162,8 @@ export interface RankingResponse {
 }
 
 export interface RankingParams {
-  platform?: string;
+  platform?: Platform;
+  tool_type?: ToolType;
   limit?: number;
 }
 

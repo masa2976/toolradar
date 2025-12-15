@@ -68,6 +68,9 @@ class TagMapping(models.Model):
 class Tag(TagBase):
     """カスタムタグモデル（表記ゆれ対応）"""
     
+    # 管理者が事前登録したタグのみ使用可能（自動作成を防止）
+    free_tagging = False
+    
     CATEGORY_CHOICES = [
         ('technical_indicator', 'テクニカル指標'),
         ('trade_style', '取引スタイル'),

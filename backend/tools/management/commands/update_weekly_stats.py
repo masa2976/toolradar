@@ -6,7 +6,7 @@
     
 説明:
     直近7日間のEventLogから週間統計を集計し、ToolStatsを更新します。
-    - 週間PV数、シェア数、平均滞在時間を計算
+    - 週間PV数、CTAクリック数、シェア数、平均滞在時間を計算
     - 週間スコアを計算
     - 順位を更新（前週順位も保存）
 """
@@ -65,6 +65,9 @@ class Command(BaseCommand):
             # PV数（viewイベント）
             week_views = events.filter(event_type='view').count()
             
+            # CTAクリック数（clickイベント）
+            week_clicks = events.filter(event_type='click').count()
+            
             # シェア数（shareイベント）
             week_shares = events.filter(event_type='share').count()
             
@@ -86,6 +89,7 @@ class Command(BaseCommand):
             
             # 統計を更新
             stats.week_views = week_views
+            stats.week_clicks = week_clicks
             stats.week_shares = week_shares
             stats.week_avg_duration = round(avg_duration, 2)
             
@@ -99,10 +103,10 @@ class Command(BaseCommand):
             updated_count += 1
             
             # 進捗表示（変化があったもののみ）
-            if week_views > 0 or week_shares > 0 or avg_duration > 0:
+            if week_views > 0 or week_clicks > 0 or week_shares > 0 or avg_duration > 0:
                 self.stdout.write(
                     f'  ✓ {tool.name}: '
-                    f'PV={week_views}, Share={week_shares}, '
+                    f'PV={week_views}, Click={week_clicks}, Share={week_shares}, '
                     f'Duration={avg_duration:.1f}s, '
                     f'Score={old_score:.1f}→{stats.week_score:.1f}'
                 )

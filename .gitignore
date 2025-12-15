@@ -68,3 +68,9 @@ backend/staticfiles/
 
 # Serena cache
 .serena/
+
+# Backup files
+backup_*.sql
+
+# Windows temp
+nul

@@ -1,4 +1,4 @@
-import { Header, HeroSection, Footer, MainFeed, Sidebar } from '@/components/layout'
+import { HeroSection, MainFeed, Sidebar } from '@/components/layout'
 import { getTools } from '@/lib/api/tools'
 
 export default async function HomePage() {
@@ -14,13 +14,8 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      {/* ヘッダー */}
-      <Header />
-
-      {/* メインコンテンツ */}
-      <main className="flex-1">
-        {/* ヒーローセクション */}
+    <>
+      {/* ヒーローセクション */}
         <HeroSection toolCount={toolCount} />
 
         {/* コンテンツエリア */}
@@ -37,10 +32,6 @@ export default async function HomePage() {
             </div>
           </div>
         </div>
-      </main>
-
-      {/* フッター */}
-      <Footer />
-    </div>
+      </>
   )
 }

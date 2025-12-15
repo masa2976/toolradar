@@ -67,7 +67,6 @@ class Command(BaseCommand):
                     platform=[platform],
                     tool_type=tool.tool_type,
                     price_type=tool.price_type,
-                    price=tool.price,
                     ribbons=tool.ribbons,
                     image_url=tool.image_url,
                     external_url=tool.external_url,

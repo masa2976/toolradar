@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tool } from '@/types';
 import { ExternalLink, Tag, DollarSign } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, normalizePlatforms } from '@/lib/utils';
 import Link from 'next/link';
 
 interface ToolCardProps {
@@ -21,6 +21,9 @@ export function ToolCard({
   showRibbon = true 
 }: ToolCardProps) {
   const isCompact = variant === 'compact';
+  
+  // APIが文字列または配列を返す可能性があるため正規化
+  const platforms = normalizePlatforms(tool.platform);
 
   // プラットフォームバッジの色
   const getPlatformColor = (platform: string) => {
@@ -111,7 +114,7 @@ export function ToolCard({
       <CardHeader className="p-4">
         {/* プラットフォームバッジ */}
         <div className="flex flex-wrap gap-1 mb-2">
-          {tool.platform.map((p, idx) => (
+          {platforms.map((p, idx) => (
             <Badge 
               key={idx}
               className={cn(

@@ -79,8 +79,9 @@ export function PopularTagsCloud({
     )
   }
 
-  // tool_countでソートして上位を取得
+  // tool_count > 0のタグのみ、tool_countでソートして上位を取得
   const popularTags = [...tagsArray]
+    .filter((tag) => tag.tool_count > 0)  // 使用されていないタグを除外
     .sort((a, b) => (b.tool_count || 0) - (a.tool_count || 0))
     .slice(0, limit)
 

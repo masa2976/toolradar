@@ -100,7 +100,7 @@ export function ShareButtons({ toolId, toolName, toolSlug }: ShareButtonsProps) 
 
   return (
     <div className="flex flex-wrap gap-2">
-      {/* Twitterシェア */}
+      {/* Xシェア */}
       <Button
         variant="outline"
         size="sm"
@@ -109,7 +109,7 @@ export function ShareButtons({ toolId, toolName, toolSlug }: ShareButtonsProps) 
         className="gap-2"
       >
         <Share2 className="h-4 w-4" />
-        Twitter
+        X
       </Button>
 
       {/* Facebookシェア */}

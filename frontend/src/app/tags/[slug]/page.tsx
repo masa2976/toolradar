@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { normalizePlatforms } from '@/lib/utils';
 
 interface TagPageProps {
   params: Promise<{
@@ -259,7 +260,7 @@ export default async function TagPage({ params }: TagPageProps) {
                   <CardContent>
                     <div className="flex gap-2 flex-wrap">
                       <Badge variant="secondary">{tool.tool_type}</Badge>
-                      {tool.platform.map(p => (
+                      {normalizePlatforms(tool.platform).map(p => (
                         <Badge key={p} variant="outline">{p}</Badge>
                       ))}
                       <Badge variant="default">{tool.price_type}</Badge>
@@ -332,7 +333,7 @@ export default async function TagPage({ params }: TagPageProps) {
                   <CardContent>
                     <div className="flex gap-2 flex-wrap">
                       <Badge variant="secondary">{tool.tool_type}</Badge>
-                      {tool.platform.map(p => (
+                      {normalizePlatforms(tool.platform).map(p => (
                         <Badge key={p} variant="outline">{p}</Badge>
                       ))}
                       <Badge variant="default">{tool.price_type}</Badge>

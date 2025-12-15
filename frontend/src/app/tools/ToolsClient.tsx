@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
-import { Grid3x3, List, SlidersHorizontal, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Grid3x3, List, SlidersHorizontal, X, Loader2, ArrowUpDown } from 'lucide-react';
 import { ToolCard } from '@/components/ui/ToolCard';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { FilterPanel, FilterState } from '@/components/ui/FilterPanel';
@@ -11,7 +12,15 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ASPWidget } from '@/components/ui/ASPWidget';
-import type { Tool } from '@/types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { getToolsClient } from '@/lib/api/tools';
+import type { Tool, ToolsOrdering } from '@/types';
 
 interface ToolsClientProps {
   initialTools: Tool[];
@@ -21,57 +30,168 @@ interface ToolsClientProps {
     platform?: string;
     tool_type?: string;
     price_type?: string;
+    tags?: string;
+    ordering?: string;
   };
 }
 
+// ソートオプションの定義
+const SORT_OPTIONS: { value: ToolsOrdering; label: string }[] = [
+  { value: '-week_score', label: '人気順' },
+  { value: '-created_at', label: '新着順' },
+  { value: 'name', label: '名前順' },
+];
+
 export function ToolsClient({ initialTools, initialCount, initialFilters = {} }: ToolsClientProps) {
+  const router = useRouter();
+  
   // フィルター状態管理
   const [searchQuery, setSearchQuery] = useState(initialFilters.q || '');
   const [filters, setFilters] = useState<FilterState>({
     platforms: initialFilters.platform ? initialFilters.platform.split(',') : [],
     toolTypes: initialFilters.tool_type ? initialFilters.tool_type.split(',') : [],
     priceType: initialFilters.price_type as 'free' | 'paid' | 'freemium' | undefined,
-    tags: [],
+    tags: initialFilters.tags ? initialFilters.tags.split(',') : [],
   });
+  
+  // ソート状態
+  const [sortOrder, setSortOrder] = useState<ToolsOrdering>(
+    (initialFilters.ordering as ToolsOrdering) || '-week_score'
+  );
+  
+  // 表示モード
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
-  // クライアント側でのフィルタリング（簡易実装）
-  const filteredTools = initialTools.filter(tool => {
-    // 検索クエリフィルタ
-    if (searchQuery && !tool.name.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
-    
-    // プラットフォームフィルタ
-    if (filters.platforms.length > 0) {
-      const hasMatchingPlatform = tool.platform.some(p => 
-        filters.platforms.includes(p.toLowerCase())
-      );
-      if (!hasMatchingPlatform) return false;
-    }
-    
-    // ツールタイプフィルタ
-    if (filters.toolTypes.length > 0 && !filters.toolTypes.includes(tool.tool_type)) {
-      return false;
-    }
-    
-    // 価格タイプフィルタ
-    if (filters.priceType && tool.price_type !== filters.priceType) {
-      return false;
-    }
-    
-    return true;
+  // Load More用の状態
+  const [displayedTools, setDisplayedTools] = useState<Tool[]>(initialTools);
+  const [totalCount, setTotalCount] = useState(initialCount);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(initialCount > initialTools.length);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  
+  // フィルターキーを生成（URLパラメータの変更検知用）
+  const filterKey = JSON.stringify({
+    q: initialFilters.q || '',
+    platform: initialFilters.platform || '',
+    tool_type: initialFilters.tool_type || '',
+    price_type: initialFilters.price_type || '',
+    tags: initialFilters.tags || '',
+    ordering: initialFilters.ordering || '',
   });
+  
+  // URLパラメータ（initialFilters）が変更されたときに状態を同期
+  useEffect(() => {
+    setFilters({
+      platforms: initialFilters.platform ? initialFilters.platform.split(',') : [],
+      toolTypes: initialFilters.tool_type ? initialFilters.tool_type.split(',') : [],
+      priceType: initialFilters.price_type as 'free' | 'paid' | 'freemium' | undefined,
+      tags: initialFilters.tags ? initialFilters.tags.split(',') : [],
+    });
+    setSearchQuery(initialFilters.q || '');
+    setSortOrder((initialFilters.ordering as ToolsOrdering) || '-week_score');
+    
+    // フィルターが変更されたらツールリストをリセット
+    setDisplayedTools(initialTools);
+    setTotalCount(initialCount);
+    setCurrentPage(1);
+    setHasMore(initialCount > initialTools.length);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterKey]); // filterKeyのみを依存配列に使用（initialTools/initialCountは含めない）
+
+  /**
+   * フィルター状態からURLパラメータを構築してナビゲート
+   */
+  const updateUrlWithFilters = useCallback((
+    newFilters: FilterState,
+    query?: string,
+    ordering?: ToolsOrdering
+  ) => {
+    const params = new URLSearchParams();
+    
+    // 検索クエリ
+    if (query) {
+      params.set('q', query);
+    }
+    
+    // プラットフォーム
+    if (newFilters.platforms.length > 0) {
+      params.set('platform', newFilters.platforms.join(','));
+    }
+    
+    // ツールタイプ
+    if (newFilters.toolTypes.length > 0) {
+      params.set('tool_type', newFilters.toolTypes.join(','));
+    }
+    
+    // 価格タイプ
+    if (newFilters.priceType) {
+      params.set('price_type', newFilters.priceType);
+    }
+    
+    // タグ
+    if (newFilters.tags.length > 0) {
+      params.set('tags', newFilters.tags.join(','));
+    }
+    
+    // ソート順（デフォルト以外の場合のみURLに含める）
+    if (ordering && ordering !== '-week_score') {
+      params.set('ordering', ordering);
+    }
+    
+    const queryString = params.toString();
+    router.push(`/tools${queryString ? `?${queryString}` : ''}`);
+  }, [router]);
   
   // 検索ハンドラー
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
-  }, []);
+    updateUrlWithFilters(filters, query, sortOrder);
+  }, [filters, sortOrder, updateUrlWithFilters]);
   
-  // フィルター変更ハンドラー
+  // フィルター変更ハンドラー（URLも更新）
   const handleFilterChange = useCallback((newFilters: FilterState) => {
     setFilters(newFilters);
-  }, []);
+    updateUrlWithFilters(newFilters, searchQuery, sortOrder);
+  }, [searchQuery, sortOrder, updateUrlWithFilters]);
+  
+  // ソート変更ハンドラー
+  const handleSortChange = useCallback((value: ToolsOrdering) => {
+    setSortOrder(value);
+    updateUrlWithFilters(filters, searchQuery, value);
+  }, [filters, searchQuery, updateUrlWithFilters]);
+  
+  // Load More ハンドラー
+  const handleLoadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return;
+    
+    setIsLoadingMore(true);
+    
+    try {
+      const nextPage = currentPage + 1;
+      
+      // APIパラメータを構築
+      const params: Record<string, string | number> = {
+        page: nextPage,
+        ordering: sortOrder,
+      };
+      
+      if (searchQuery) params.q = searchQuery;
+      if (filters.platforms.length > 0) params.platform = filters.platforms.join(',');
+      if (filters.toolTypes.length > 0) params.tool_type = filters.toolTypes.join(',');
+      if (filters.priceType) params.price_type = filters.priceType;
+      if (filters.tags.length > 0) params.tags = filters.tags.join(',');
+      
+      const data = await getToolsClient(params as any);
+      
+      setDisplayedTools(prev => [...prev, ...data.results]);
+      setCurrentPage(nextPage);
+      setHasMore(data.next !== null);
+    } catch (error) {
+      console.error('Failed to load more tools:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [isLoadingMore, hasMore, currentPage, sortOrder, searchQuery, filters]);
   
   // アクティブなフィルター数を計算
   const activeFilterCount = 
@@ -79,6 +199,20 @@ export function ToolsClient({ initialTools, initialCount, initialFilters = {} }:
     filters.toolTypes.length + 
     (filters.priceType ? 1 : 0) + 
     filters.tags.length;
+  
+  // フィルタークリア
+  const handleClearFilters = useCallback(() => {
+    const clearedFilters: FilterState = {
+      platforms: [],
+      toolTypes: [],
+      priceType: undefined,
+      tags: [],
+    };
+    setSearchQuery('');
+    setFilters(clearedFilters);
+    setSortOrder('-week_score');
+    router.push('/tools');
+  }, [router]);
   
   return (
     <div className="min-h-screen bg-background">
@@ -122,8 +256,8 @@ export function ToolsClient({ initialTools, initialCount, initialFilters = {} }:
           <aside className="hidden lg:block lg:col-span-3">
             <div className="sticky top-20 space-y-6">
               <FilterPanel 
-                onFilterChange={handleFilterChange} 
-                initialFilters={filters}
+                filters={filters}
+                onChange={handleFilterChange}
               />
               
               {/* ASPウィジェット */}
@@ -136,8 +270,8 @@ export function ToolsClient({ initialTools, initialCount, initialFilters = {} }:
           
           {/* メインコンテンツエリア */}
           <main className="lg:col-span-9">
-            {/* ツールバー（モバイルフィルター・表示切替・件数） */}
-            <div className="flex items-center justify-between mb-6">
+            {/* ツールバー（モバイルフィルター・ソート・表示切替・件数） */}
+            <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
               {/* 左側：モバイルフィルター + 件数 */}
               <div className="flex items-center gap-4">
                 {/* モバイルフィルター（Sheet） */}
@@ -166,20 +300,36 @@ export function ToolsClient({ initialTools, initialCount, initialFilters = {} }:
                     </SheetHeader>
                     <Separator className="my-4" />
                     <FilterPanel 
-                      onFilterChange={handleFilterChange} 
-                      initialFilters={filters}
-                    />
+                filters={filters}
+                onChange={handleFilterChange}
+              />
                   </SheetContent>
                 </Sheet>
                 
                 {/* 件数表示 */}
                 <p className="text-sm text-muted-foreground">
-                  <span className="font-semibold text-foreground">{filteredTools.length}</span> 件のツール
+                  <span className="font-semibold text-foreground">{totalCount}</span> 件のツール
                 </p>
               </div>
               
-              {/* 右側：表示切替 */}
+              {/* 右側：ソート + 表示切替 */}
               <div className="flex items-center gap-2">
+                {/* ソートセレクト */}
+                <Select value={sortOrder} onValueChange={handleSortChange}>
+                  <SelectTrigger className="w-[130px]">
+                    <ArrowUpDown className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="並び替え" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SORT_OPTIONS.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                {/* 表示切替 */}
                 <Button
                   variant={viewMode === 'grid' ? 'default' : 'outline'}
                   size="sm"
@@ -210,10 +360,11 @@ export function ToolsClient({ initialTools, initialCount, initialFilters = {} }:
                     variant="secondary"
                     className="cursor-pointer hover:bg-secondary/80"
                     onClick={() => {
-                      setFilters({
+                      const newFilters = {
                         ...filters,
                         platforms: filters.platforms.filter(p => p !== platform)
-                      });
+                      };
+                      handleFilterChange(newFilters);
                     }}
                   >
                     {platform.toUpperCase()}
@@ -226,10 +377,11 @@ export function ToolsClient({ initialTools, initialCount, initialFilters = {} }:
                     variant="secondary"
                     className="cursor-pointer hover:bg-secondary/80"
                     onClick={() => {
-                      setFilters({
+                      const newFilters = {
                         ...filters,
                         toolTypes: filters.toolTypes.filter(t => t !== type)
-                      });
+                      };
+                      handleFilterChange(newFilters);
                     }}
                   >
                     {type}
@@ -241,7 +393,8 @@ export function ToolsClient({ initialTools, initialCount, initialFilters = {} }:
                     variant="secondary"
                     className="cursor-pointer hover:bg-secondary/80"
                     onClick={() => {
-                      setFilters({ ...filters, priceType: undefined });
+                      const newFilters = { ...filters, priceType: undefined };
+                      handleFilterChange(newFilters);
                     }}
                   >
                     {filters.priceType === 'free' ? '無料' : filters.priceType === 'paid' ? '有料' : 'Freemium'}
@@ -254,10 +407,11 @@ export function ToolsClient({ initialTools, initialCount, initialFilters = {} }:
                     variant="secondary"
                     className="cursor-pointer hover:bg-secondary/80"
                     onClick={() => {
-                      setFilters({
+                      const newFilters = {
                         ...filters,
                         tags: filters.tags.filter(t => t !== tag)
-                      });
+                      };
+                      handleFilterChange(newFilters);
                     }}
                   >
                     {tag}
@@ -270,22 +424,14 @@ export function ToolsClient({ initialTools, initialCount, initialFilters = {} }:
             {/* ツール表示エリア */}
             <div>
               {/* 結果なし */}
-              {filteredTools.length === 0 && (
+              {displayedTools.length === 0 && (
                 <div className="text-center py-20">
                   <p className="text-muted-foreground mb-4">
                     条件に一致するツールが見つかりませんでした
                   </p>
                   <Button 
                     variant="outline"
-                    onClick={() => {
-                      setSearchQuery('');
-                      setFilters({
-                        platforms: [],
-                        toolTypes: [],
-                        priceType: undefined,
-                        tags: [],
-                      });
-                    }}
+                    onClick={handleClearFilters}
                   >
                     フィルターをクリア
                   </Button>
@@ -293,27 +439,56 @@ export function ToolsClient({ initialTools, initialCount, initialFilters = {} }:
               )}
               
               {/* ツールグリッド */}
-              {filteredTools.length > 0 && (
-                <div 
-                  className={
-                    viewMode === 'grid'
-                      ? 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6'
-                      : 'space-y-4'
-                  }
-                >
-                  {filteredTools.map((tool) => (
-                    <ToolCard
-                      key={tool.id}
-                      tool={tool}
-                      variant={viewMode === 'grid' ? 'detailed' : 'compact'}
-                    />
-                  ))}
-                </div>
+              {displayedTools.length > 0 && (
+                <>
+                  <div 
+                    className={
+                      viewMode === 'grid'
+                        ? 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6'
+                        : 'space-y-4'
+                    }
+                  >
+                    {displayedTools.map((tool) => (
+                      <ToolCard
+                        key={tool.id}
+                        tool={tool}
+                        variant={viewMode === 'grid' ? 'detailed' : 'compact'}
+                      />
+                    ))}
+                  </div>
+                  
+                  {/* 進捗表示 & Load More */}
+                  <div className="mt-8 space-y-4">
+                    {/* 進捗表示 */}
+                    <div className="text-center text-sm text-muted-foreground">
+                      📦 {displayedTools.length}件 / 全{totalCount}件を表示中
+                    </div>
+                    
+                    {/* Load More ボタン */}
+                    {hasMore && (
+                      <div className="flex justify-center">
+                        <Button
+                          variant="outline"
+                          size="lg"
+                          onClick={handleLoadMore}
+                          disabled={isLoadingMore}
+                          className="min-w-[200px]"
+                        >
+                          {isLoadingMore ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              読み込み中...
+                            </>
+                          ) : (
+                            'さらに読み込む'
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
-            
-            {/* ページネーション（将来実装） */}
-            {/* TODO: ページネーションコンポーネント実装 */}
           </main>
         </div>
       </div>

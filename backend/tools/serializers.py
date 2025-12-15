@@ -12,6 +12,9 @@ class ToolSerializer(serializers.ModelSerializer):
     # タグはネストされたシリアライザで表示
     tags = TagSimpleSerializer(many=True, read_only=True)
     
+    # リボンは自動計算 + 手動設定を結合
+    ribbons = serializers.SerializerMethodField()
+    
     # 週間ランキング情報（後でToolStatsから取得）
     week_rank = serializers.SerializerMethodField()
     week_rank_change = serializers.SerializerMethodField()
@@ -28,7 +31,6 @@ class ToolSerializer(serializers.ModelSerializer):
             'platform',
             'tool_type',
             'price_type',
-            'price',
             'ribbons',
             'image_url',
             'external_url',
@@ -61,12 +63,19 @@ class ToolSerializer(serializers.ModelSerializer):
             return obj.stats.week_views
         return 0
 
+    def get_ribbons(self, obj):
+        """手動リボン + 自動計算リボンを取得"""
+        return obj.all_ribbons
+
 
 class ToolListSerializer(serializers.ModelSerializer):
     """ツールのシリアライザ（一覧表示用・軽量版）"""
     
     # タグは名前のリストのみ
     tag_names = serializers.SerializerMethodField()
+    
+    # リボンは自動計算 + 手動設定を結合
+    ribbons = serializers.SerializerMethodField()
     
     class Meta:
         model = Tool
@@ -78,7 +87,6 @@ class ToolListSerializer(serializers.ModelSerializer):
             'platform',
             'tool_type',
             'price_type',
-            'price',
             'ribbons',
             'image_url',
             'tag_names',
@@ -90,3 +98,7 @@ class ToolListSerializer(serializers.ModelSerializer):
     def get_tag_names(self, obj):
         """タグ名のリストを取得"""
         return [tag.name for tag in obj.tags.all()[:5]]  # 最大5個まで  # 最大5個まで
+
+    def get_ribbons(self, obj):
+        """手動リボン + 自動計算リボンを取得"""
+        return obj.all_ribbons

@@ -18,6 +18,7 @@ django-redis==5.4.0
 django-autoslug==1.9.9
 django-simple-history==3.10.1
 APScheduler==3.10.4  # タスクスケジューラー
+thefuzz[speedup]==0.22.1  # ファジーマッチング（重複検出用）
 
 # === Wagtail拡張 ===
 wagtail-modeladmin==2.2.0

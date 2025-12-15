@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.utils.text import slugify
+import unicodedata
+import re
 from taggit.managers import TaggableManager
 from tags.models import TaggedItem
 
@@ -75,15 +77,6 @@ class Tool(models.Model):
         default='free',
         help_text="価格体系"
     )
-    price = models.DecimalField(
-        "価格",
-        max_digits=10,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        help_text="有料の場合の価格（USD）"
-    )
-    
     # リボン（バッジ表示用）
     ribbons = ArrayField(
         models.CharField(max_length=20),
@@ -100,7 +93,17 @@ class Tool(models.Model):
     )
     external_url = models.URLField(
         "外部URL",
-        help_text="ダウンロード/販売ページのURL"
+        unique=True,
+        help_text="ダウンロード/販売ページのURL（重複登録不可）"
+    )
+    
+    # 重複チェック用の正規化された名前
+    normalized_name = models.CharField(
+        "正規化名",
+        max_length=200,
+        editable=False,
+        blank=True,
+        help_text="重複チェック用（自動生成）"
     )
     
     # メタデータ
@@ -131,6 +134,14 @@ class Tool(models.Model):
             models.Index(fields=['tool_type']),
             models.Index(fields=['price_type']),
             models.Index(fields=['-created_at']),
+            models.Index(fields=['normalized_name']),
+        ]
+        constraints = [
+            # 同じ名前 + 同じプラットフォームの組み合わせを禁止
+            models.UniqueConstraint(
+                fields=['normalized_name', 'platform'],
+                name='unique_tool_per_platform'
+            )
         ]
     
     def __str__(self):
@@ -140,6 +151,75 @@ class Tool(models.Model):
         # slugが空の場合は自動生成
         if not self.slug:
             self.slug = slugify(self.name)
+        
+        # 名前の正規化（重複チェック用）
+        self.normalized_name = self._normalize_name(self.name)
+        
         super().save(*args, **kwargs)
+    
+    @staticmethod
+    def _normalize_name(name):
+        """
+        名前を正規化して比較可能な形式に変換
+        - 全角→半角変換（NFKC正規化）
+        - 小文字化
+        - 空白の統一
+        - 特殊文字除去
+        """
+        if not name:
+            return ""
+        
+        # 1. Unicode正規化（全角→半角）
+        normalized = unicodedata.normalize('NFKC', name)
+        
+        # 2. 小文字化
+        normalized = normalized.lower()
+        
+        # 3. 空白の統一（連続空白→単一空白、前後trim）
+        normalized = re.sub(r'\s+', ' ', normalized).strip()
+        
+        # 4. 特殊文字除去（英数字、日本語、空白のみ残す）
+        normalized = re.sub(r'[^\w\s\u3040-\u309f\u30a0-\u30ff\u4e00-\u9fff]', '', normalized)
+        
+        return normalized
+
+    @property
+    def computed_ribbons(self):
+        """
+        自動計算されるリボン
+        - new: 作成から14日以内
+        - popular: 週間ランキングトップ10
+        """
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        computed = []
+        
+        # "new" チェック: 14日以内に作成
+        if self.created_at:
+            days_since_creation = (timezone.now() - self.created_at).days
+            if days_since_creation <= 14:
+                computed.append('new')
+        
+        # "popular" チェック: 週間ランキングトップ10
+        try:
+            if hasattr(self, 'stats') and self.stats.current_rank:
+                if self.stats.current_rank <= 10:
+                    computed.append('popular')
+        except Exception:
+            pass
+        
+        return computed
+    
+    @property
+    def all_ribbons(self):
+        """
+        手動リボン + 自動リボンを結合（重複を除く）
+        """
+        manual = self.ribbons or []
+        computed = self.computed_ribbons
+        # 重複を除いて結合
+        all_ribbons = list(set(manual + computed))
+        return all_ribbons
 
 from .models_stats import ToolStats, EventLog

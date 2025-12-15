@@ -1,8 +1,17 @@
 from django.contrib import admin
+from django import forms
+from django.contrib import messages
 from import_export import resources, fields, widgets
 from import_export.admin import ImportExportModelAdmin
 from .models import Tool
 from tags.models import Tag
+
+# ファジーマッチング（類似ツール検出用）
+try:
+    from thefuzz import fuzz
+    FUZZY_MATCHING_ENABLED = True
+except ImportError:
+    FUZZY_MATCHING_ENABLED = False
 
 
 from import_export.formats.base_formats import CSV
@@ -75,13 +84,13 @@ class ToolResource(resources.ModelResource):
         # エクスポート用フィールド（タイムスタンプは読み取り専用）
         fields = (
             'name', 'slug', 'short_description', 'long_description',
-            'platform', 'tool_type', 'price_type', 'price',
+            'platform', 'tool_type', 'price_type',
             'ribbons', 'image_url', 'external_url', 'metadata',
             'tags'
         )
         export_order = (
             'name', 'slug', 'short_description', 'long_description',
-            'platform', 'tool_type', 'price_type', 'price',
+            'platform', 'tool_type', 'price_type',
             'ribbons', 'image_url', 'external_url', 'metadata',
             'tags', 'created_at', 'updated_at'
         )
@@ -118,10 +127,6 @@ class ToolResource(resources.ModelResource):
         # ribbonsが空の場合の処理
         if row.get('ribbons') == '':
             row['ribbons'] = ''
-        
-        # priceが空文字列の場合はNoneに変換
-        if row.get('price') == '':
-            row['price'] = None
     
     def after_import_instance(self, instance, new, row=None, **kwargs):
         """
@@ -169,10 +174,65 @@ class ToolResource(resources.ModelResource):
         return super().export(queryset, **kwargs)
 
 
+class ToolAdminForm(forms.ModelForm):
+    """
+    ツール管理フォーム（ファジーマッチング警告機能付き）
+    """
+    
+    class Meta:
+        model = Tool
+        fields = '__all__'
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # 類似ツール情報を保持する属性
+        self._similar_tools = []
+    
+    def clean_name(self):
+        """
+        名前の類似チェック（同一プラットフォーム内）
+        - 85%以上の類似度で警告リストに追加
+        - 登録自体はブロックしない（警告のみ）
+        """
+        name = self.cleaned_data.get('name')
+        platform = self.data.get('platform')  # フォームデータから取得
+        
+        if not name or not FUZZY_MATCHING_ENABLED:
+            return name
+        
+        # 既存ツールと比較
+        queryset = Tool.objects.all()
+        if self.instance.pk:
+            # 編集時は自分自身を除外
+            queryset = queryset.exclude(pk=self.instance.pk)
+        
+        # 同一プラットフォームのツールのみ対象
+        if platform:
+            queryset = queryset.filter(platform=platform)
+        
+        similar_tools = []
+        for tool in queryset:
+            # ファジーマッチングで類似度を計算
+            ratio = fuzz.ratio(name.lower(), tool.name.lower())
+            if ratio >= 85:
+                similar_tools.append({
+                    'tool': tool,
+                    'ratio': ratio,
+                    'platform': tool.get_platform_display()
+                })
+        
+        # 類似度の高い順にソート
+        similar_tools.sort(key=lambda x: x['ratio'], reverse=True)
+        self._similar_tools = similar_tools
+        
+        return name
+
+
 @admin.register(Tool)
 class ToolAdmin(ImportExportModelAdmin):
     """ツール管理画面(インポート・エクスポート対応)"""
     
+    form = ToolAdminForm  # ファジーマッチング警告機能付きフォーム
     resource_class = ToolResource
     formats = (CSVUTF8BOM,)  # UTF-8 BOM付きCSV(Excel日本語対応)
     
@@ -199,7 +259,8 @@ class ToolAdmin(ImportExportModelAdmin):
     }
     readonly_fields = [
         'created_at',
-        'updated_at'
+        'updated_at',
+        'computed_ribbons_display'
     ]
     
     # filter_horizontalは削除（ClusterTaggableManagerと互換性なし）
@@ -210,13 +271,15 @@ class ToolAdmin(ImportExportModelAdmin):
             'fields': ('name', 'slug', 'short_description', 'long_description')
         }),
         ('分類', {
-            'fields': ('platform', 'tool_type', 'tags')
+            'fields': ('platform', 'tool_type', 'tags'),
+            'description': 'タグはカンマ区切りで入力。正規化処理で表記揺れを自動統一します。'
         }),
         ('価格', {
-            'fields': ('price_type', 'price')
+            'fields': ('price_type',)
         }),
         ('表示設定', {
-            'fields': ('ribbons', 'image_url', 'external_url')
+            'fields': ('ribbons', 'computed_ribbons_display', 'image_url', 'external_url'),
+            'description': '※ "new"（14日以内）と "popular"（TOP10）は自動計算されます。手動リボン（featured等）のみ入力してください。'
         }),
         ('メタデータ', {
             'fields': ('metadata',),
@@ -254,11 +317,42 @@ class ToolAdmin(ImportExportModelAdmin):
             obj.tags.clear()
             obj.tags.add(*normalized_tags)
     
+    def save_model(self, request, obj, form, change):
+        """
+        モデル保存時に類似ツール警告を表示
+        """
+        # まず保存を実行
+        super().save_model(request, obj, form, change)
+        
+        # フォームに類似ツール情報があれば警告表示
+        if hasattr(form, '_similar_tools') and form._similar_tools:
+            similar_list = []
+            for item in form._similar_tools[:5]:  # 最大5件まで表示
+                tool = item['tool']
+                ratio = item['ratio']
+                similar_list.append(f'「{tool.name}」({tool.platform.upper()}) - 類似度{ratio}%')
+            
+            warning_msg = (
+                f'⚠️ 類似ツールが見つかりました: {", ".join(similar_list)}。'
+                f'重複登録でないかご確認ください。'
+            )
+            messages.warning(request, warning_msg)
+    
     def display_platforms(self, obj):
         """プラットフォームを表示"""
         # platformは単一の文字列になったので、そのまま大文字で表示
         return obj.platform.upper()
     display_platforms.short_description = 'プラットフォーム'
+    
+    def computed_ribbons_display(self, obj):
+        """自動計算されるリボンを表示"""
+        if obj.pk:
+            ribbons = obj.computed_ribbons
+            if ribbons:
+                return ', '.join(ribbons)
+            return '（なし）'
+        return '（保存後に表示されます）'
+    computed_ribbons_display.short_description = '自動リボン'
 
 
 # ToolStats と EventLog のインポート追加

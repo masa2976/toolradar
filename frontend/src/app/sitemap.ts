@@ -133,14 +133,50 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ]
 
+  // カテゴリ別ランキングページ（SEO用）
+  // MT5を優先表示
+  const platforms = ['mt5', 'mt4', 'tradingview'] as const
+  
+  // プラットフォームごとの有効なツールタイプ
+  // MT4/MT5: EA, Indicator, Script, Library（MQL5公式サイトより）
+  // TradingView: Indicator, Strategy, Library（Pine Script公式ドキュメントより）
+  const toolTypesByPlatform: Record<string, readonly string[]> = {
+    mt4: ['ea', 'indicator', 'script', 'library'],
+    mt5: ['ea', 'indicator', 'script', 'library'],
+    tradingview: ['indicator', 'strategy', 'library'],
+  }
+  
+  const rankingPages: MetadataRoute.Sitemap = []
+  
+  for (const platform of platforms) {
+    // プラットフォーム別ランキング
+    rankingPages.push({
+      url: `${siteUrl}/ranking/weekly/${platform}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    })
+    
+    // プラットフォーム + ツールタイプ別ランキング（有効な組み合わせのみ）
+    const validToolTypes = toolTypesByPlatform[platform]
+    for (const toolType of validToolTypes) {
+      rankingPages.push({
+        url: `${siteUrl}/ranking/weekly/${platform}/${toolType}`,
+        lastModified: new Date(),
+        changeFrequency: 'weekly',
+        priority: 0.6,
+      })
+    }
+  }
+
   // 動的ページを並列取得（パフォーマンス最適化）
   const [toolPages, blogPages] = await Promise.all([
     getToolSitemapEntries(),
     getBlogSitemapEntries(),
   ])
 
-  console.log(`[sitemap] Generated: ${staticPages.length} static + ${toolPages.length} tools + ${blogPages.length} blog posts`)
+  console.log(`[sitemap] Generated: ${staticPages.length} static + ${rankingPages.length} ranking + ${toolPages.length} tools + ${blogPages.length} blog posts`)
 
   // 全ページを統合して返却
-  return [...staticPages, ...toolPages, ...blogPages]
+  return [...staticPages, ...rankingPages, ...toolPages, ...blogPages]
 }

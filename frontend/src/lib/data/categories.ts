@@ -58,6 +58,7 @@ export const toolTypes: CategoryItem[] = [
 
 /**
  * テクニカル指標（スライダー: 5個）
+ * slugはNotionタグマスターに準拠
  */
 export const technicalIndicators: CategoryItem[] = [
   {
@@ -72,12 +73,12 @@ export const technicalIndicators: CategoryItem[] = [
   },
   {
     label: '移動平均',
-    href: '/tools?tags=ma',
+    href: '/tools?tags=moving-average',
     gradient: 'from-sky-500 to-sky-600',
   },
   {
     label: 'ボリンジャーバンド',
-    href: '/tools?tags=bb',
+    href: '/tools?tags=bollinger-bands',
     gradient: 'from-blue-500 to-blue-600',
   },
   {
@@ -100,21 +101,21 @@ export const tradeStyles: CategoryItem[] = [
   },
   {
     label: 'デイトレード',
-    href: '/tools?tags=day_trading',
+    href: '/tools?tags=day-trade',
     gradient: 'from-rose-500 to-rose-600',
     description: '1日以内に完結する短期売買スタイル',
     backgroundImage: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=800&auto=format&fit=crop',
   },
   {
     label: 'スイング',
-    href: '/tools?tags=swing',
+    href: '/tools?tags=swing-trade',
     gradient: 'from-violet-500 to-violet-600',
     description: '数日〜数週間保有する中期トレードスタイル',
     backgroundImage: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop',
   },
   {
     label: 'ポジション',
-    href: '/tools?tags=position',
+    href: '/tools?tags=position-trade',
     gradient: 'from-emerald-500 to-emerald-600',
     description: '数週間〜数ヶ月保有する長期トレードスタイル',
     backgroundImage: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop',

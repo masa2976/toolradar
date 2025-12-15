@@ -21,6 +21,7 @@ import { RelatedPosts } from '@/components/ui/RelatedPosts';
 
 type Props = {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -104,35 +105,64 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 // ページコンポーネント
 // ============================================
 
-export default async function BlogPostPage({ params }: Props) {
+export default async function BlogPostPage({ params, searchParams }: Props) {
   const { slug } = await params;
+  const searchParamsResolved = await searchParams;
   const { isEnabled } = await draftMode();
   
   // URLエンコードされたslugをデコード
   const decodedSlug = decodeURIComponent(slug);
   
+  // プレビューパラメータを取得
+  const isPreview = searchParamsResolved.preview === 'true';
+  const previewToken = typeof searchParamsResolved.token === 'string' ? searchParamsResolved.token : undefined;
+  const contentType = typeof searchParamsResolved.content_type === 'string' ? searchParamsResolved.content_type : 'blog.blogpage';
+  
   // APIからデータ取得
   // サーバーサイド: Docker内部通信用URL（backend:8000）
-  // クライアントサイド: 外部アクセス用URL（localhost:8000）
   const apiUrl = process.env.API_URL || 'http://backend:8000';
   
   try {
-    const response = await fetch(
-      `${apiUrl}/api/blog/posts/${decodedSlug}/`,
-      {
-        headers: isEnabled ? {
-          'X-Draft-Mode': 'true',
-        } : {},
-        cache: isEnabled ? 'no-store' : 'default',
-        next: isEnabled ? { revalidate: 0 } : { revalidate: 3600 },
+    let post;
+    
+    // プレビューモード: WagtailプレビューAPIを使用
+    if (isPreview && previewToken) {
+      console.log('Fetching preview data:', { token: previewToken, contentType });
+      
+      const previewUrl = `${apiUrl}/api/v2/page_preview/1/?token=${previewToken}&content_type=${contentType}`;
+      const response = await fetch(previewUrl, {
+        cache: 'no-store',
+      });
+      
+      if (!response.ok) {
+        console.error('Preview API failed:', response.status, response.statusText);
+        notFound();
       }
-    );
-    
-    if (!response.ok) {
-      notFound();
+      
+      const previewData = await response.json();
+      console.log('Preview data received:', { title: previewData.title, hasBody: !!previewData.body });
+      
+      // WagtailプレビューAPIのレスポンスを通常の記事形式に変換
+      post = transformPreviewData(previewData, apiUrl);
+    } else {
+      // 通常モード: Django APIを使用
+      const response = await fetch(
+        `${apiUrl}/api/blog/posts/${decodedSlug}/`,
+        {
+          headers: isEnabled ? {
+            'X-Draft-Mode': 'true',
+          } : {},
+          cache: isEnabled ? 'no-store' : 'default',
+          next: isEnabled ? { revalidate: 0 } : { revalidate: 3600 },
+        }
+      );
+      
+      if (!response.ok) {
+        notFound();
+      }
+      
+      post = await response.json();
     }
-    
-    const post = await response.json();
     
     // 構造化データ（Article Schema）
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://toolradar.jp';
@@ -395,4 +425,86 @@ function RelatedTools({ tools }: { tools: any[] }) {
       </div>
     </div>
   );
+}
+
+// ============================================
+// WagtailプレビューAPIレスポンス変換
+// ============================================
+
+function transformPreviewData(previewData: any, apiUrl: string) {
+  // WagtailプレビューAPIのレスポンスを通常の記事形式に変換
+  // Wagtail API v2のレスポンス形式に対応
+  
+  // 画像URLの処理
+  let featuredImage = null;
+  if (previewData.featured_image) {
+    // Wagtail API v2形式: { id: 1, meta: { download_url: "..." } }
+    if (previewData.featured_image.meta?.download_url) {
+      const imageUrl = previewData.featured_image.meta.download_url;
+      featuredImage = {
+        url: imageUrl.startsWith('http') ? imageUrl : `${apiUrl}${imageUrl}`,
+        alt: previewData.featured_image.title || previewData.title,
+      };
+    } else if (previewData.featured_image.url) {
+      // 既にURL形式の場合
+      featuredImage = {
+        url: previewData.featured_image.url.startsWith('http') 
+          ? previewData.featured_image.url 
+          : `${apiUrl}${previewData.featured_image.url}`,
+        alt: previewData.featured_image.alt || previewData.title,
+      };
+    }
+  }
+  
+  // カテゴリの処理
+  let category = null;
+  if (previewData.category) {
+    // 文字列の場合はそのまま使用
+    if (typeof previewData.category === 'string') {
+      category = { name: previewData.category };
+    } else if (previewData.category.name) {
+      category = previewData.category;
+    }
+  }
+  
+  // 投資タイプの処理
+  let investmentType = null;
+  if (previewData.investment_type) {
+    if (typeof previewData.investment_type === 'string') {
+      investmentType = { name: previewData.investment_type };
+    } else if (previewData.investment_type.name) {
+      investmentType = previewData.investment_type;
+    }
+  }
+  
+  // タグの処理
+  let tags: any[] = [];
+  if (previewData.tags && Array.isArray(previewData.tags)) {
+    tags = previewData.tags.map((tag: any) => {
+      if (typeof tag === 'string') {
+        return { name: tag, slug: tag };
+      }
+      return tag;
+    });
+  }
+  
+  return {
+    id: previewData.id,
+    title: previewData.title || '無題',
+    slug: previewData.meta?.slug || previewData.slug || '',
+    excerpt: previewData.excerpt || '',
+    body: previewData.body || [],
+    featured_image: featuredImage,
+    category: category,
+    investment_type: investmentType,
+    tags: tags,
+    view_count: previewData.view_count || 0,
+    first_published_at: previewData.meta?.first_published_at || previewData.first_published_at || new Date().toISOString(),
+    last_published_at: previewData.meta?.last_published_at || previewData.last_published_at,
+    published_at: previewData.meta?.first_published_at || previewData.first_published_at || new Date().toISOString(),
+    related_tools: previewData.related_tools || [],
+    related_posts: previewData.related_posts || [],
+    // プレビューフラグ
+    _isPreview: true,
+  };
 }

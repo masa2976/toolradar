@@ -21,6 +21,7 @@ class WeeklyRankingViewSet(viewsets.ReadOnlyModelViewSet):
     
     クエリパラメータ:
     - platform: プラットフォームフィルタ（mt4|mt5|tradingview）
+    - tool_type: ツールタイプフィルタ（EA|Indicator|Library|Script|Strategy）
     """
     serializer_class = WeeklyRankingSerializer
     
@@ -28,7 +29,7 @@ class WeeklyRankingViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = None
     
     def get_queryset(self):
-        """クエリセット取得（プラットフォームフィルタ対応）"""
+        """クエリセット取得（プラットフォーム・ツールタイプフィルタ対応）"""
         queryset = ToolStats.objects.select_related('tool').filter(
             current_rank__isnull=False,
             current_rank__lte=50
@@ -37,7 +38,22 @@ class WeeklyRankingViewSet(viewsets.ReadOnlyModelViewSet):
         # プラットフォームフィルタ
         platform = self.request.query_params.get('platform')
         if platform:
-            queryset = queryset.filter(tool__platform__contains=[platform])
+            # CharFieldの単純な等価比較
+            queryset = queryset.filter(tool__platform=platform)
+        
+        # ツールタイプフィルタ
+        tool_type = self.request.query_params.get('tool_type')
+        if tool_type:
+            queryset = queryset.filter(tool__tool_type=tool_type)
+        
+        # limit パラメータ対応
+        limit = self.request.query_params.get('limit')
+        if limit:
+            try:
+                limit = int(limit)
+                queryset = queryset[:limit]
+            except ValueError:
+                pass
         
         return queryset
     

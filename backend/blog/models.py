@@ -33,7 +33,9 @@ from .blocks import (
     AccordionBlock,  # Phase 11-3: 折りたたみコンテンツブロック
 )
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
-from modelcluster.fields import ParentalManyToManyField
+from modelcluster.fields import ParentalKey, ParentalManyToManyField
+from modelcluster.contrib.taggit import ClusterTaggableManager
+from taggit.models import ItemBase
 
 
 @register_snippet
@@ -165,6 +167,27 @@ class BlogIndexPage(Page):
         
         context['blog_pages'] = blog_pages
         return context
+
+
+
+# ========================================
+# BlogPageタグ（through model）
+# ========================================
+class BlogPageTag(ItemBase):
+    """
+    BlogPageとTagの中間テーブル（Wagtail公式パターン）
+    ClusterTaggableManagerと連携してタグ機能を提供
+    """
+    tag = models.ForeignKey(
+        'tags.Tag',
+        related_name='tagged_blogs',
+        on_delete=models.CASCADE
+    )
+    content_object = ParentalKey(
+        'blog.BlogPage',
+        on_delete=models.CASCADE,
+        related_name='tagged_items'
+    )
 
 
 class BlogPage(HeadlessPreviewMixin, Page):
@@ -300,11 +323,11 @@ class BlogPage(HeadlessPreviewMixin, Page):
     # ========================================
     # タグ
     # ========================================
-    tags = ParentalManyToManyField(
-        'tags.Tag',
+    tags = ClusterTaggableManager(
+        through=BlogPageTag,
         blank=True,
         verbose_name="タグ",
-        help_text="記事に関連するタグ（既存タグから選択）"
+        help_text="記事に関連するタグ（入力で候補表示、既存タグから選択）"
     )
     
     # ========================================
@@ -329,7 +352,7 @@ class BlogPage(HeadlessPreviewMixin, Page):
         FieldPanel('featured_image'),
         FieldPanel('body'),
         FieldPanel('related_tools'),
-        FieldPanel('tags', widget=forms.CheckboxSelectMultiple),
+        FieldPanel('tags'),  # ClusterTaggableManager: オートコンプリートUI
     ]
     
     # ========================================

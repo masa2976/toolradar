@@ -37,54 +37,143 @@ export class APIError extends Error {
 }
 
 /**
- * fetchラッパー関数（エラーハンドリング付き）
+ * fetchラッパー関数（エラーハンドリング + 指数バックオフリトライ付き）
+ *
+ * 429 Too Many Requests などの一時的なエラーに対して、
+ * 指数バックオフ + Jitterでリトライを行います。
  *
  * @param url - リクエストURL
  * @param options - fetchオプション
+ * @param retryConfig - リトライ設定（オプション）
  * @returns レスポンスデータ
  * @throws {APIError} HTTPエラーの場合
  */
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-    });
+async function apiFetch<T>(
+  url: string, 
+  options?: RequestInit,
+  retryConfig?: { maxRetries?: number; baseDelay?: number }
+): Promise<T> {
+  const { maxRetries = 3, baseDelay = 500 } = retryConfig || {};
+  
+  /**
+   * 指数バックオフ + Jitterで待機時間を計算
+   */
+  const getBackoffDelay = (attempt: number, retryAfterMs?: number): number => {
+    // Retry-Afterヘッダーが指定されている場合はそれを優先
+    if (retryAfterMs) return retryAfterMs;
+    
+    // 指数バックオフ: baseDelay * 2^attempt（例: 500ms, 1000ms, 2000ms, 4000ms）
+    const exponentialDelay = baseDelay * Math.pow(2, attempt);
+    // Jitter: ランダムな遅延を追加（0-100ms）して同時リトライを防ぐ
+    const jitter = Math.random() * 100;
+    // 最大30秒でキャップ
+    return Math.min(exponentialDelay + jitter, 30000);
+  };
+  
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+  
+  /**
+   * リトライ可能なステータスコードかどうかを判定
+   */
+  const isRetryable = (status: number): boolean => {
+    return status === 429 || // Too Many Requests
+           status === 500 || // Internal Server Error
+           status === 502 || // Bad Gateway
+           status === 503 || // Service Unavailable
+           status === 504;   // Gateway Timeout
+  };
+  
+  let lastError: APIError | null = null;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options?.headers,
+        },
+      });
 
-    // HTTPステータスチェック（fetchは200番台以外でもエラーをthrowしない）
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      // HTTPステータスチェック
+      if (!response.ok) {
+        // 429の場合はRetry-Afterヘッダーを確認
+        let retryAfterMs: number | undefined;
+        if (response.status === 429) {
+          const retryAfterHeader = response.headers.get('Retry-After');
+          if (retryAfterHeader) {
+            const seconds = parseInt(retryAfterHeader, 10);
+            if (!isNaN(seconds)) {
+              retryAfterMs = seconds * 1000;
+            }
+          }
+        }
+        
+        const errorData = await response.json().catch(() => ({}));
+        const apiError = new APIError(
+          errorData.message || `HTTP Error: ${response.status}`,
+          response.status,
+          response.statusText,
+          errorData
+        );
+        
+        // リトライ可能なエラーで、まだリトライ回数が残っている場合
+        if (isRetryable(response.status) && attempt < maxRetries) {
+          const delay = getBackoffDelay(attempt, retryAfterMs);
+          if (process.env.NODE_ENV === 'development') {
+            console.warn(
+              `[apiFetch] ${response.status} error, retrying in ${delay.toFixed(0)}ms (attempt ${attempt + 1}/${maxRetries})...`
+            );
+          }
+          await sleep(delay);
+          lastError = apiError;
+          continue;
+        }
+        
+        throw apiError;
+      }
+
+      // レスポンスが空の場合（204 No Content等）
+      if (response.status === 204) {
+        return {} as T;
+      }
+
+      const data = await response.json();
+      return data as T;
+      
+    } catch (error) {
+      // APIErrorはそのまま再throw（リトライ対象外エラー）
+      if (error instanceof APIError) {
+        throw error;
+      }
+
+      // ネットワークエラーの場合もリトライ
+      if (attempt < maxRetries) {
+        const delay = getBackoffDelay(attempt);
+        if (process.env.NODE_ENV === 'development') {
+          console.warn(
+            `[apiFetch] Network error, retrying in ${delay.toFixed(0)}ms (attempt ${attempt + 1}/${maxRetries})...`
+          );
+        }
+        await sleep(delay);
+        lastError = new APIError(
+          error instanceof Error ? error.message : 'Unknown error',
+          0,
+          'Network Error'
+        );
+        continue;
+      }
+
       throw new APIError(
-        errorData.message || `HTTP Error: ${response.status}`,
-        response.status,
-        response.statusText,
-        errorData
+        error instanceof Error ? error.message : 'Unknown error',
+        0,
+        'Network Error'
       );
     }
-
-    // レスポンスが空の場合（204 No Content等）
-    if (response.status === 204) {
-      return {} as T;
-    }
-
-    const data = await response.json();
-    return data as T;
-  } catch (error) {
-    // APIErrorはそのまま再throw
-    if (error instanceof APIError) {
-      throw error;
-    }
-
-    // その他のエラー（ネットワークエラー等）
-    throw new APIError(
-      error instanceof Error ? error.message : 'Unknown error',
-      0,
-      'Network Error'
-    );
   }
+  
+  // ここに到達した場合は最後のエラーをthrow
+  throw lastError || new APIError('Max retries exceeded', 0, 'Retry Failed');
 }
 
 /**
@@ -158,11 +247,26 @@ export async function getWeeklyRanking(): Promise<WeeklyRankingResponse> {
 export async function trackEvent(params: EventTrackingParams): Promise<void> {
   const url = `${getApiBaseUrl()}/events/track/`;
 
-  await apiFetch<void>(url, {
-    method: 'POST',
-    body: JSON.stringify(params),
-    cache: 'no-store' as RequestCache, // イベントトラッキングはキャッシュしない
-  });
+  try {
+    // バックエンドの形式に変換
+    const backendParams = {
+      tool_id: params.target_id,
+      event_type: params.event_type,
+      duration_seconds: params.duration_seconds,
+      share_platform: params.share_platform,
+    };
+
+    await apiFetch<void>(url, {
+      method: 'POST',
+      body: JSON.stringify(backendParams),
+      cache: 'no-store' as RequestCache,
+    });
+  } catch (error) {
+    // トラッキングエラーは静かに処理（ユーザー体験に影響させない）
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[trackEvent] Failed to track event:', error);
+    }
+  }
 }
 
 /**

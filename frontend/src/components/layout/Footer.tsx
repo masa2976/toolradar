@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { Github, Twitter } from 'lucide-react'
 
 const footerLinks = {
   company: [
@@ -11,17 +10,13 @@ const footerLinks = {
     { label: '利用規約', href: '/terms' },
     { label: '免責事項', href: '/disclaimer' },
   ],
-  social: [
-    { icon: Twitter, href: 'https://twitter.com/toolradar', label: 'Twitter' },
-    { icon: Github, href: 'https://github.com/toolradar', label: 'GitHub' },
-  ],
 }
 
 export function Footer() {
   return (
     <footer className="border-t bg-gray-50">
       <div className="container mx-auto px-4 py-8 sm:py-12">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {/* ロゴとキャッチコピー */}
           <div className="sm:col-span-2 lg:col-span-1">
             <Link href="/" className="flex items-center space-x-2">
@@ -31,7 +26,7 @@ export function Footer() {
               <span className="font-bold text-xl">ToolRadar</span>
             </Link>
             <p className="mt-4 text-sm text-gray-600">
-              投資ツールの最適解を見つけるプラットフォーム
+              EA・インジケーター探しの羅針盤
             </p>
           </div>
 
@@ -72,34 +67,19 @@ export function Footer() {
               ))}
             </ul>
           </div>
+        </div>
 
-          {/* SNSリンク */}
-          <div>
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-900">
-              Follow Us
-            </h3>
-            <div className="flex space-x-4">
-              {footerLinks.social.map((social) => {
-                const Icon = social.icon
-                return (
-                  <a
-                    key={social.href}
-                    href={social.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-600 hover:text-blue-600 transition-colors"
-                    aria-label={social.label}
-                  >
-                    <Icon className="h-5 w-5" />
-                  </a>
-                )
-              })}
-            </div>
-          </div>
+        {/* 免責事項 */}
+        <div className="mt-8 border-t pt-6">
+          <p className="text-xs text-gray-500 text-center leading-relaxed">
+            当サイトに掲載されている情報は、各ツールの最終更新日時点のものです。
+            投資は元本保証がございません。投資判断はご自身の責任において行ってください。
+            当サイトの情報を利用して生じたいかなる損害についても、当サイトは責任を負いかねます。
+          </p>
         </div>
 
         {/* コピーライト */}
-        <div className="mt-8 border-t pt-8 text-center">
+        <div className="mt-6 pt-6 border-t text-center">
           <p className="text-sm text-gray-600">
             © {new Date().getFullYear()} ToolRadar. All rights reserved.
           </p>

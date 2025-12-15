@@ -27,8 +27,9 @@ class TagSerializer(serializers.ModelSerializer):
     
     def get_tool_count(self, obj):
         """このタグが付いているツールの数を取得"""
-        from tools.models import Tool
-        return Tool.objects.filter(tags=obj).count()
+        from tags.models import TaggedItem
+        # TaggableManager経由でカウント（TaggedItemを使用）
+        return TaggedItem.objects.filter(tag=obj).count()
     
     def get_post_count(self, obj):
         """このタグが付いている記事の数を取得"""

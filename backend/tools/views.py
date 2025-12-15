@@ -66,15 +66,32 @@ class ToolViewSet(viewsets.ReadOnlyModelViewSet):
     list: ツール一覧取得（検索・フィルタリング対応）
     retrieve: ツール詳細取得
     related: 関連ツール取得（SEO内部リンク用）
+    
+    ソートオプション:
+    - ordering=-week_score: 人気順（週間スコア降順）
+    - ordering=-created_at: 新着順
+    - ordering=name: 名前順（昇順）
     """
-    queryset = Tool.objects.prefetch_related('tags').all()
     lookup_field = 'slug'
     
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = ToolFilter
     search_fields = ['name', 'short_description', 'long_description']
-    ordering_fields = ['created_at', 'name', 'price']
-    ordering = ['-created_at']  # デフォルトは新着順
+    ordering_fields = ['created_at', 'name', 'week_score']
+    ordering = ['-week_score', '-created_at']  # デフォルトは人気順
+    
+    def get_queryset(self):
+        """
+        week_scoreでのソートをサポートするため、
+        statsをannotateしてweek_scoreをToolレベルで参照可能にする
+        """
+        from django.db.models import F, Value
+        from django.db.models.functions import Coalesce
+        
+        return Tool.objects.prefetch_related('tags').select_related('stats').annotate(
+            # statsがないツールは0として扱う
+            week_score=Coalesce(F('stats__week_score'), Value(0.0))
+        )
     
     def get_serializer_class(self):
         """一覧と詳細でシリアライザを使い分け"""

@@ -29,11 +29,11 @@ const categories: CategoryLink[] = [
   },
   {
     label: 'EA/ストラテジー',
-    href: '/tools?tool_type=ea',
+    href: '/tools?tool_type=EA',
   },
   {
     label: 'インジケーター',
-    href: '/tools?tool_type=indicator',
+    href: '/tools?tool_type=Indicator',
   },
   {
     label: '無料ツール',

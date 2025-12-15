@@ -274,11 +274,12 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     
     # レート制限設定（スパム対策）
-    'DEFAULT_THROTTLE_CLASSES': [
+    # 開発環境（DEBUG=True）ではレート制限を無効化し、本番環境のみで有効化
+    'DEFAULT_THROTTLE_CLASSES': [] if DEBUG else [
         'rest_framework.throttling.AnonRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/hour',  # 匿名ユーザー全体の制限
+        'anon': '100/hour',  # 本番環境: 匿名ユーザー全体の制限（開発環境では無効化）
         'contact_burst': '3/min',  # お問い合わせ: 短時間の連続送信制限
         'contact_sustained': '10/hour',  # お問い合わせ: 長期的なスパム制限
     },

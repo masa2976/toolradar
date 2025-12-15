@@ -9,12 +9,13 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TrendingUp, Star } from 'lucide-react';
 import { placeholderDataUrl } from '@/lib/imageUtils';
+import { normalizePlatforms } from '@/lib/utils';
 
 interface RelatedTool {
   slug: string;
   name: string;
   short_description: string;
-  platform: string[];
+  platform: string | string[];
   tool_type: string;
   week_score?: number;
   week_rank?: number;
@@ -27,11 +28,17 @@ interface RelatedToolsProps {
   toolSlug: string;
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+const fetcher = (url: string) => 
+  fetch(url).then((res) => {
+    if (!res.ok) throw new Error('Failed to fetch');
+    return res.json();
+  });
 
 export function RelatedTools({ toolSlug }: RelatedToolsProps) {
   const { data, error, isLoading } = useSWR(
-    `/api/tools/${toolSlug}/related/`,
+    `${API_BASE_URL}/api/tools/${toolSlug}/related/`,
     fetcher,
     {
       revalidateOnFocus: false,
@@ -68,7 +75,7 @@ export function RelatedTools({ toolSlug }: RelatedToolsProps) {
               <div className="aspect-video relative bg-muted">
                 <Image
                   src={tool.image_url || '/images/placeholder.png'}
-                  alt={`${tool.name} - ${tool.platform.join('/')} ${tool.tool_type}ツール`}
+                  alt={`${tool.name} - ${normalizePlatforms(tool.platform).join('/')} ${tool.tool_type}ツール`}
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="object-cover"
@@ -76,7 +83,7 @@ export function RelatedTools({ toolSlug }: RelatedToolsProps) {
                   blurDataURL={placeholderDataUrl}
                 />
                 <div className="absolute left-2 top-2 flex gap-1">
-                  {tool.platform.map((p) => (
+                  {normalizePlatforms(tool.platform).map((p) => (
                     <Badge key={p} variant="secondary" className="text-xs">
                       {p.toUpperCase()}
                     </Badge>

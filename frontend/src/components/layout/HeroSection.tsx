@@ -1,11 +1,14 @@
 'use client'
 
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { SearchBar } from '@/components/ui/SearchBar'
 import { Badge } from '@/components/ui/badge'
+import { tagsApi } from '@/lib/api'
 
-const popularTags = [
+// フォールバック用の静的タグ（API取得前・エラー時に表示）
+const fallbackTags = [
   { name: 'RSI', slug: 'rsi' },
   { name: 'MACD', slug: 'macd' },
   { name: '移動平均', slug: 'ma' },
@@ -40,6 +43,22 @@ function getToolCountText(count: number): string {
 export function HeroSection({ toolCount }: HeroSectionProps) {
   const router = useRouter()
   const [isSearching, setIsSearching] = useState(false)
+
+  // タグを動的に取得
+  const { data: tags } = useQuery({
+    queryKey: ['tags', 'popular'],
+    queryFn: () => tagsApi.getTags(),
+    staleTime: 24 * 60 * 60 * 1000, // 24時間キャッシュ
+  })
+
+  // 人気タグを計算（tool_countでソート、上位8件）
+  const popularTags = tags && Array.isArray(tags) && tags.length > 0
+    ? [...tags]
+        .filter((tag) => tag.tool_count > 0)
+        .sort((a, b) => b.tool_count - a.tool_count)
+        .slice(0, 8)
+        .map((tag) => ({ name: tag.name, slug: tag.slug }))
+    : fallbackTags
 
   const handleSearch = (query: string) => {
     if (query.trim()) {

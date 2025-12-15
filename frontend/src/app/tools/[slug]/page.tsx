@@ -19,6 +19,7 @@ import { AdSense } from '@/components/ui/AdSense'
 import { RelatedTools } from '@/components/ui/RelatedTools'
 import { ToolEventTracker } from '@/components/features/ToolEventTracker'
 import { ShareButtons } from '@/components/features/ShareButtons'
+import { CTAButton } from '@/components/features/CTAButton'
 
 // ============================================
 // データ取得関数（共通化）
@@ -74,7 +75,7 @@ export default async function ToolDetailPage({ params }: PageProps) {
     name: tool.name,
     applicationCategory: 'FinanceApplication',
     applicationSubCategory: 'TradingTool',
-    operatingSystem: platforms.join(', '),
+    operatingSystem: platforms.map(p => p.toUpperCase()).join(', '),
     description: tool.short_description,
     image: imageUrl,
     url: tool.external_url,
@@ -237,7 +238,7 @@ export default async function ToolDetailPage({ params }: PageProps) {
 
           {/* サムネイル画像 */}
           {tool.image_url && (
-            <div className="relative mb-8 aspect-video overflow-hidden rounded-lg border">
+            <div className="relative mb-8 aspect-video max-w-2xl mx-auto overflow-hidden rounded-lg border bg-muted">
               <Image
                 src={tool.image_url}
                 alt={`${tool.name}のスクリーンショット - ${tool.tool_type}ツール`}
@@ -258,7 +259,7 @@ export default async function ToolDetailPage({ params }: PageProps) {
             </CardHeader>
             <CardContent>
               <div 
-                className="prose prose-gray max-w-none dark:prose-invert"
+                className="prose prose-gray max-w-none dark:prose-invert whitespace-pre-line"
                 dangerouslySetInnerHTML={{ __html: tool.long_description ?? '' }}
               />
             </CardContent>
@@ -349,8 +350,8 @@ export default async function ToolDetailPage({ params }: PageProps) {
                   </div>
                 ) : tool.price_type === 'paid' ? (
                   <div className="flex items-center gap-2">
-                    <span className="text-3xl font-bold text-foreground">
-                      ${tool.price}
+                    <span className="text-2xl font-bold text-foreground">
+                      有料
                     </span>
                   </div>
                 ) : (
@@ -362,26 +363,21 @@ export default async function ToolDetailPage({ params }: PageProps) {
                 )}
               </div>
 
-              {/* 外部リンクボタン */}
-              <Button 
-                asChild
+              {/* 外部リンクボタン（クリックトラッキング付き） */}
+              <CTAButton
+                toolId={tool.id}
+                externalUrl={tool.external_url}
+                priceType={tool.price_type as 'free' | 'paid' | 'freemium'}
                 className="w-full"
-                size="lg"
-              >
-                <a
-                  href={tool.external_url}
-                  target="_blank"
-                  rel="nofollow noopener noreferrer"
-                  className="flex items-center justify-center gap-2"
-                >
-                  ダウンロード/購入
-                  <ExternalLink className="h-4 w-4" />
-                </a>
-              </Button>
+              />
 
               {/* 注意事項 */}
-              <p className="text-xs text-muted-foreground">
-                ※外部サイトへ移動します。詳細は提供元サイトでご確認ください。
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                ※掲載情報は変更される場合があります。最新の価格・仕様・動作条件は
+                <Link href="/disclaimer" className="underline hover:text-foreground">
+                  公式サイト
+                </Link>
+                でご確認ください。
               </p>
             </CardContent>
           </Card>
@@ -400,7 +396,7 @@ export default async function ToolDetailPage({ params }: PageProps) {
               <div className="flex justify-between border-b pb-2">
                 <span className="text-muted-foreground">プラットフォーム</span>
                 <span className="font-medium">
-                  {(Array.isArray(tool.platform) ? tool.platform : [tool.platform]).join(', ')}
+                  {(Array.isArray(tool.platform) ? tool.platform : [tool.platform]).map(p => p.toUpperCase()).join(', ')}
                 </span>
               </div>
               
@@ -413,14 +409,27 @@ export default async function ToolDetailPage({ params }: PageProps) {
                 </span>
               </div>
               
-              <div className="flex justify-between">
+              <div className="flex justify-between border-b pb-2">
                 <span className="text-muted-foreground">登録日</span>
                 <span className="font-medium">
                   {new Date(tool.created_at).toLocaleDateString('ja-JP')}
                 </span>
               </div>
+              
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">更新日</span>
+                <span className="font-medium">
+                  {new Date(tool.updated_at).toLocaleDateString('ja-JP')}
+                </span>
+              </div>
             </CardContent>
           </Card>
+
+          {/* 情報に関する注記 */}
+          <p className="mt-4 text-xs text-muted-foreground leading-relaxed">
+            ※掲載情報は{new Date(tool.updated_at).toLocaleDateString('ja-JP')}時点のものです。
+            最新情報は提供元サイトでご確認ください。
+          </p>
         </div>
       </div>
       </div>
