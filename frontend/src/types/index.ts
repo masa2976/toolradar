@@ -170,6 +170,36 @@ export interface RankingParams {
 // タグ関連
 // ============================================
 
+/**
+ * タグカテゴリ
+ */
+export interface TagCategory {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  display_order: number;
+  tag_count: number;
+}
+
+/**
+ * タグ
+ */
+export interface Tag {
+  id: number;
+  name: string;
+  slug: string;
+  category: string | null;  // 後方互換性のためのスラッグ
+  category_detail?: TagCategory;  // 詳細情報
+  synonyms?: string[];
+  description?: string;
+  tool_count: number;
+  post_count?: number;
+}
+
+/**
+ * タグ一覧レスポンス（ページネーション有効時用）
+ */
 export interface TagsResponse {
   count: number;
   next: string | null;
@@ -177,16 +207,11 @@ export interface TagsResponse {
   results: Tag[];
 }
 
-export interface Tag {
-  id: number;
-  name: string;
-  slug: string;
-  category: string;
-  tool_count: number;
-}
-
+/**
+ * タグパラメータ
+ */
 export interface TagsParams {
-  category?: string;
+  tag_category__slug?: string;  // カテゴリスラッグでフィルタ
 }
 
 // ASPアフィリエイト関連

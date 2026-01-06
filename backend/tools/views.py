@@ -28,9 +28,12 @@ class ToolFilter(django_filters.FilterSet):
     # リボンフィルタ
     ribbons = django_filters.CharFilter(method='filter_ribbons')
     
+    # カテゴリフィルタ（slug指定）
+    category = django_filters.CharFilter(method='filter_category')
+    
     class Meta:
         model = Tool
-        fields = ['platform', 'tool_type', 'price_type', 'tags', 'ribbons']
+        fields = ['platform', 'tool_type', 'price_type', 'tags', 'ribbons', 'category']
     
     def filter_platform(self, queryset, name, value):
         """プラットフォームフィルタ（カンマ区切りで複数指定可、OR条件）"""
@@ -57,6 +60,10 @@ class ToolFilter(django_filters.FilterSet):
         for ribbon in ribbons:
             queryset = queryset.filter(ribbons__contains=[ribbon])
         return queryset
+    
+    def filter_category(self, queryset, name, value):
+        """カテゴリフィルタ（slug指定）"""
+        return queryset.filter(category__slug=value)
 
 
 class ToolViewSet(viewsets.ReadOnlyModelViewSet):
@@ -153,3 +160,5 @@ class ToolViewSet(viewsets.ReadOnlyModelViewSet):
             'count': len(serializer.data),
             'results': serializer.data
         })
+
+

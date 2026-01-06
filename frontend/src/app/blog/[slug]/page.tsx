@@ -13,6 +13,7 @@ import { placeholderDataUrl } from '@/lib/imageUtils';
 import { StreamFieldRenderer } from '@/components/blog/StreamFieldRenderer';
 import { calculateReadingTime } from '@/lib/readingTime';
 import { RelatedPosts } from '@/components/ui/RelatedPosts';
+import { AdSense } from '@/components/ui/AdSense';
 
 
 // ============================================
@@ -331,6 +332,11 @@ function BlogPostHeader({ post }: { post: any }) {
 // ============================================
 
 function BlogPostContent({ post }: { post: any }) {
+  // 環境変数から広告スロットIDを取得
+  const adSlotToc = process.env.NEXT_PUBLIC_AD_SLOT_TOC || '';
+  const adSlotMiddle = process.env.NEXT_PUBLIC_AD_SLOT_MIDDLE || '';
+  const adSlotBottom = process.env.NEXT_PUBLIC_AD_SLOT_BOTTOM || '';
+  
   return (
     <div className="prose prose-lg max-w-none mb-8">
       {/* アイキャッチ画像 */}
@@ -373,7 +379,11 @@ function BlogPostContent({ post }: { post: any }) {
                    [&_li]:text-gray-700 [&_li]:mb-2 [&_li]:leading-relaxed
                    [&_a]:text-blue-600 [&_a]:underline hover:[&_a]:text-blue-800
                    [&_strong]:font-semibold [&_strong]:text-gray-900">
-            <StreamFieldRenderer blocks={post.body} />
+            <StreamFieldRenderer 
+              blocks={post.body}
+              adSlotAfterToc={adSlotToc}
+              adSlotMiddle={adSlotMiddle}
+            />
           </div>
         ) : (
           // ⚠️ 後方互換性: HTMLとして返された場合（非推奨）
@@ -392,6 +402,15 @@ function BlogPostContent({ post }: { post: any }) {
             </p>
           </div>
         </>
+      )}
+      
+      {/* 記事末尾のAdSense広告 */}
+      {adSlotBottom && (
+        <AdSense 
+          slot={adSlotBottom}
+          placement="blog-bottom"
+          format="auto"
+        />
       )}
     </div>
   );

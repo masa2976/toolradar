@@ -2,7 +2,7 @@
 Notionのタグマスターデータをバックエンドに同期するコマンド
 """
 from django.core.management.base import BaseCommand
-from tags.models import Tag
+from tags.models import Tag, TagCategory
 
 
 class Command(BaseCommand):
@@ -59,6 +59,26 @@ class Command(BaseCommand):
             {"name": "ビットコイン", "slug": "bitcoin", "category": "asset_type", "synonyms": ["Bitcoin", "BTC", "BTCUSD"]},
         ]
 
+        # カテゴリ名のマッピング（slug → 日本語表示名）
+        category_names = {
+            'technical_indicator': 'テクニカル指標',
+            'trade_style': '取引スタイル',
+            'currency_pair': '通貨ペア',
+            'strategy_type': '戦略タイプ',
+            'asset_type': '資産タイプ',
+        }
+
+        # 必要なカテゴリを作成・取得
+        category_cache = {}
+        for slug, name in category_names.items():
+            cat, created = TagCategory.objects.get_or_create(
+                slug=slug,
+                defaults={'name': name, 'display_order': len(category_cache) + 1}
+            )
+            category_cache[slug] = cat
+            if created:
+                self.stdout.write(self.style.SUCCESS(f"🏷️ カテゴリ作成: {name} (slug: {slug})"))
+
         created_count = 0
         updated_count = 0
 
@@ -68,11 +88,14 @@ class Command(BaseCommand):
             if not existing:
                 existing = Tag.objects.filter(name=tag_data['name']).first()
             
+            # TagCategoryオブジェクトを取得
+            tag_category = category_cache.get(tag_data['category'])
+            
             if existing:
                 old_slug = existing.slug
                 existing.name = tag_data['name']
                 existing.slug = tag_data['slug']
-                existing.category = tag_data['category']
+                existing.tag_category = tag_category
                 existing.synonyms = tag_data['synonyms']
                 existing.save()
                 updated_count += 1
@@ -84,7 +107,7 @@ class Command(BaseCommand):
                 Tag.objects.create(
                     name=tag_data['name'],
                     slug=tag_data['slug'],
-                    category=tag_data['category'],
+                    tag_category=tag_category,
                     synonyms=tag_data['synonyms']
                 )
                 created_count += 1

@@ -144,8 +144,8 @@ export function MainFeed() {
 
       {/* ========== AdSense広告（トップページ下部） ========== */}
       <AdSense
-        adSlot="YYYYYYYYYY"
-        adFormat="horizontal"
+        slot="YYYYYYYYYY"
+        format="horizontal"
         placement="homepage-bottom"
         className="my-8"
       />

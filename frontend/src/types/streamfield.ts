@@ -173,19 +173,104 @@ export type AlertBlock = StreamFieldBlock<AlertBlockValue>;
 export type AccordionBlock = StreamFieldBlock<AccordionBlockValue>;
 
 /**
+ * カテゴリブロックのvalue型（Phase 2対応）
+ * カテゴリブロックは子ブロックの配列を持つ
+ */
+export type CategoryBlockValue = StreamFieldBlock[];
+
+/**
+ * カテゴリブロック型（Phase 2対応）
+ */
+export type BasicContentBlock = StreamFieldBlock<CategoryBlockValue> & { type: 'basic_content' };
+export type MediaBlock = StreamFieldBlock<CategoryBlockValue> & { type: 'media' };
+export type MonetizationBlock = StreamFieldBlock<CategoryBlockValue> & { type: 'monetization' };
+export type LayoutBlock = StreamFieldBlock<CategoryBlockValue> & { type: 'layout' };
+
+/**
+ * Imageブロックのvalue型
+ */
+export interface ImageBlockValue {
+  /** 画像ID */
+  id: number;
+  /** 画像URL */
+  url?: string;
+  /** 代替テキスト */
+  alt?: string;
+  /** キャプション */
+  caption?: string;
+}
+
+/**
+ * Quoteブロックのvalue型
+ */
+export type QuoteBlockValue = string;
+
+/**
+ * Embedブロックのvalue型
+ */
+export interface EmbedBlockValue {
+  /** 埋め込みURL */
+  url: string;
+  /** 埋め込みHTML */
+  html?: string;
+}
+
+/**
+ * RelatedToolsブロックのvalue型
+ */
+export interface RelatedToolsBlockValue {
+  /** 表示するツールIDリスト */
+  tools: { tool_id: string }[];
+  /** 表示スタイル */
+  display_style?: 'list' | 'cards' | 'compact';
+  /** スコア表示フラグ */
+  show_score?: boolean;
+}
+
+/**
+ * TableOfContentsブロックのvalue型
+ */
+export interface TableOfContentsValue {
+  /** 対象見出しレベル */
+  depth?: number;
+}
+
+/**
+ * 型付きStreamFieldブロック（追加分）
+ */
+export type ImageBlock = StreamFieldBlock<ImageBlockValue>;
+export type QuoteBlock = StreamFieldBlock<QuoteBlockValue>;
+export type EmbedBlock = StreamFieldBlock<EmbedBlockValue>;
+export type RelatedToolsBlock = StreamFieldBlock<RelatedToolsBlockValue>;
+
+/**
  * 既知のブロック型のUnion
  */
 export type KnownBlock = 
+  // カテゴリブロック（Phase 2）
+  | BasicContentBlock
+  | MediaBlock
+  | MonetizationBlock
+  | LayoutBlock
+  // 基本コンテンツ
   | ParagraphBlock
   | HeadingBlock
-  | CodeBlock
-  | ComparisonTableBlock
+  | ImageBlock
+  | QuoteBlock
+  // メディア・埋め込み
   | TableBlock
+  | EmbedBlock
+  | CodeBlock
+  // 収益化・CTA
   | CTABlock
   | BannerBlock
+  | RelatedToolsBlock
+  // レイアウト・装飾
   | SpacerBlock
   | AlertBlock
-  | AccordionBlock;
+  | AccordionBlock
+  // レガシー
+  | ComparisonTableBlock;
 
 /**
  * StreamFieldレンダラーのProps

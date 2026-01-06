@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Geist, Geist_Mono, Noto_Serif_JP } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
@@ -53,6 +54,15 @@ export default function RootLayout({
             <Footer />
           </div>
         </Providers>
+        
+        {/* Google AdSense スクリプト */}
+        {adsenseClientId && process.env.NODE_ENV === 'production' && (
+          <Script
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClientId}`}
+            strategy="afterInteractive"
+            crossOrigin="anonymous"
+          />
+        )}
       </body>
     </html>
   );

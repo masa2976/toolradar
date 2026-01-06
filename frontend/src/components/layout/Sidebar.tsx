@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useWeeklyRanking } from '@/hooks/useRanking'
 import { RankingList } from '@/components/ui/RankingList'
 import { PopularPostsWidget } from '@/components/ui/PopularPostsWidget'
-import { CategoryQuickLinks } from '@/components/ui/CategoryQuickLinks'
+import { TagCategoryLinks } from '@/components/ui/TagCategoryLinks'
 import { PopularTagsCloud } from '@/components/ui/PopularTagsCloud'
 import { ASPWidget } from '@/components/ui/ASPWidget'
 import { Loader2, TrendingUp, ChevronRight } from 'lucide-react'
@@ -61,8 +61,8 @@ export function Sidebar({ isMobile = false, rankingLimit }: SidebarProps) {
       {/* 2. ASPウィジェット（デスクトップのみ、ランキング直後、PR表記済み） */}
       {!isMobile && <ASPWidget />}
 
-      {/* 3. カテゴリクイックリンク（モバイル・デスクトップ共通） */}
-      <CategoryQuickLinks />
+      {/* 3. タグカテゴリリンク（モバイル・デスクトップ共通） */}
+      <TagCategoryLinks />
 
       {/* 4. 人気タグクラウド（モバイル・デスクトップ共通） */}
       <PopularTagsCloud limit={isMobile ? 15 : 20} />

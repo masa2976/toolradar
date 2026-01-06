@@ -42,6 +42,21 @@ def update_weekly_stats():
         logger.error(f"週間統計更新エラー: {e}", exc_info=True)
 
 
+def check_tool_images():
+    """
+    ツール画像のURL有効性をチェック
+    
+    このジョブは毎週水曜日の深夜4時に実行されます。
+    壊れた画像URLを検出し、管理画面で確認できるようにします。
+    """
+    try:
+        logger.info("=== ツール画像チェック開始 ===")
+        call_command('check_tool_images')
+        logger.info("=== ツール画像チェック完了 ===")
+    except Exception as e:
+        logger.error(f"ツール画像チェックエラー: {e}", exc_info=True)
+
+
 def start_scheduler():
     """
     スケジューラーを開始
@@ -49,6 +64,7 @@ def start_scheduler():
     登録されるジョブ:
     - 週間統計更新: 毎日深夜2時に実行（ローリング7日間集計）
     - イベントログクリーンアップ: 毎週日曜日深夜3時に実行
+    - ツール画像チェック: 毎週水曜日深夜4時に実行
     
     Django起動時に1度だけ呼ばれる
     """
@@ -90,6 +106,20 @@ def start_scheduler():
         )
         logger.info("スケジューラー: 週間統計更新ジョブを登録しました")
         logger.info("スケジュール: 毎日 02:00 JST")
+    
+    # ツール画像チェックジョブ（毎週水曜日深夜4時に実行）
+    image_job_id = 'check_tool_images'
+    if not scheduler.get_job(image_job_id):
+        scheduler.add_job(
+            check_tool_images,
+            trigger=CronTrigger(day_of_week='wed', hour=4, minute=0),
+            id=image_job_id,
+            name='ツール画像チェック',
+            replace_existing=True,
+            max_instances=1
+        )
+        logger.info("スケジューラー: ツール画像チェックジョブを登録しました")
+        logger.info("スケジュール: 毎週水曜日 04:00 JST")
     
     # スケジューラーを開始
     if not scheduler.running:

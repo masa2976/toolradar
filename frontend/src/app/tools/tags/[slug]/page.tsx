@@ -98,12 +98,12 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
       description: tag.description || `${tag.name}に関連する投資ツール（${tag.tool_count}件）と記事（${tag.post_count}件）をご紹介。MT4/MT5のEA、インジケーター、トレード戦略など。`,
       robots: contentCount >= 10 ? 'index,follow' : 'noindex,follow',
       alternates: {
-        canonical: `${siteUrl}/tags/${slug}`
+        canonical: `${siteUrl}/tools/tags/${slug}`
       },
       openGraph: {
         title: `${tag.name}の投資ツール・記事一覧 | ToolRadar`,
         description: tag.description || `${tag.name}に関連する投資ツールと記事`,
-        url: `${siteUrl}/tags/${slug}`,
+        url: `${siteUrl}/tools/tags/${slug}`,
         siteName: 'ToolRadar',
         locale: 'ja_JP',
         type: 'website',
@@ -175,7 +175,7 @@ export default async function TagPage({ params }: TagPageProps) {
           '@type': 'ListItem',
           position: 3,
           name: tag.name,
-          item: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://toolradar.jp'}/tags/${slug}`
+          item: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://toolradar.jp'}/tools/tags/${slug}`
         }
       ]
     };
@@ -198,7 +198,7 @@ export default async function TagPage({ params }: TagPageProps) {
             </li>
             <li>/</li>
             <li>
-              <Link href="/tags" className="hover:text-foreground">
+              <Link href="/tools/tags" className="hover:text-foreground">
                 タグ
               </Link>
             </li>

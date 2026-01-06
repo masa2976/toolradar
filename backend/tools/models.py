@@ -7,6 +7,9 @@ from taggit.managers import TaggableManager
 from tags.models import TaggedItem
 
 
+# ========================================
+# ツールカテゴリ（用途ベース）
+# ========================================
 class Tool(models.Model):
     """トレーディングツール情報モデル"""
     
@@ -95,6 +98,31 @@ class Tool(models.Model):
         "外部URL",
         unique=True,
         help_text="ダウンロード/販売ページのURL（重複登録不可）"
+    )
+    
+    # 画像ステータス（定期チェック用）
+    IMAGE_STATUS_CHOICES = [
+        ('ok', '正常'),
+        ('error', 'エラー'),
+        ('unchecked', '未チェック'),
+    ]
+    image_status = models.CharField(
+        "画像ステータス",
+        max_length=20,
+        choices=IMAGE_STATUS_CHOICES,
+        default='unchecked',
+        help_text="画像URLの有効性チェック結果"
+    )
+    image_last_checked = models.DateTimeField(
+        "最終チェック日時",
+        null=True,
+        blank=True,
+        help_text="画像URLを最後にチェックした日時"
+    )
+    image_error_message = models.TextField(
+        "エラーメッセージ",
+        blank=True,
+        help_text="画像取得エラー時のメッセージ"
     )
     
     # 重複チェック用の正規化された名前

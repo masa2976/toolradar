@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { getTools } from '@/lib/api/tools';
 import { ToolsClient } from './ToolsClient';
-import type { Platform, ToolType, PriceType, Tool } from '@/types';
+import type { Platform, ToolType, PriceType, Tool, ToolsOrdering } from '@/types';
 
 // ============================================
 // ツール一覧ページ（Server Component）
@@ -30,7 +30,7 @@ export default async function ToolsListPage({ searchParams }: PageProps) {
     tool_type: resolvedParams.tool_type as ToolType | undefined,
     price_type: resolvedParams.price_type as PriceType | undefined,
     tags: resolvedParams.tags,
-    ordering: resolvedParams.ordering,
+    ordering: resolvedParams.ordering as ToolsOrdering | undefined,
     page: resolvedParams.page ? parseInt(resolvedParams.page) : undefined,
   };
 

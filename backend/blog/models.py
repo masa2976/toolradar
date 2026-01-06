@@ -224,77 +224,86 @@ class BlogPage(HeadlessPreviewMixin, Page):
     # コンテンツ（最小限のStreamField）
     # ========================================
     body = StreamField([
-        # 基本コンテンツブロック
-        ('heading', HeadingBlock()),
-        ('text', blocks.RichTextBlock(
-            label="本文",
-            features=[
-                # 基本装飾
-                'bold', 'italic',
-                # リンク
-                'link',
-                # リスト
-                'ol', 'ul',
-                # 引用・水平線
-                'blockquote', 'hr',
-            ],
-            help_text="本文の段落（太字、斜体、リンク、リストなどが使えます）"
-        )),
-        ('image', ImageChooserBlock(
-            label="画像",
-            help_text="記事内の画像"
-        )),
-        ('table', TableBlock(
-            label="表",
-            help_text="データを表形式で表示（行・列を追加できます）",
-            table_options={
-                'contextMenu': {
-                    'items': {
-                        'row_above': {'name': '上に行を挿入'},
-                        'row_below': {'name': '下に行を挿入'},
-                        'col_left': {'name': '左に列を挿入'},
-                        'col_right': {'name': '右に列を挿入'},
-                        'remove_row': {'name': '行を削除'},
-                        'remove_col': {'name': '列を削除'},
-                        'undo': {'name': '元に戻す'},
-                        'redo': {'name': 'やり直す'}
-                    }
-                },
-                'stretchH': 'all',        # 列を水平方向に伸ばす
-                'autoWrapRow': True,      # 行の自動折り返し
-                'autoWrapCol': True,      # 列の自動折り返し
-                'minSpareRows': 0,        # 最小予備行数
-            }
-        )),
-        ('quote', blocks.BlockQuoteBlock(
-            label="引用",
-            help_text="引用文を表示"
-        )),
-        ('embed', EmbedBlock(
-            label="埋め込み",
-            help_text="YouTube動画やツイート等の埋め込み"
-        )),        
-        # 目次
-        ('table_of_contents', TableOfContentsBlock()),
-
+        # ========================================
+        # 📝 基本コンテンツ（見出し・本文・画像・引用）
+        # ========================================
+        ('basic_content', blocks.StreamBlock([
+            ('heading', HeadingBlock()),
+            ('text', blocks.RichTextBlock(
+                label="本文",
+                features=[
+                    # 基本装飾
+                    'bold', 'italic',
+                    # リンク
+                    'link',
+                    # リスト
+                    'ol', 'ul',
+                    # 引用・水平線
+                    'blockquote', 'hr',
+                ],
+                help_text="本文の段落（太字、斜体、リンク、リストなどが使えます）"
+            )),
+            ('image', ImageChooserBlock(
+                label="画像",
+                help_text="記事内の画像"
+            )),
+            ('quote', blocks.BlockQuoteBlock(
+                label="引用",
+                help_text="引用文を表示"
+            )),
+        ], icon='doc-full', label='📝 基本コンテンツ')),
         
-        # コード表示
-        ('code', CodeBlock()),
+        # ========================================
+        # 🎨 メディア・埋め込み（表・動画・コード）
+        # ========================================
+        ('media', blocks.StreamBlock([
+            ('table', TableBlock(
+                label="表",
+                help_text="データを表形式で表示（行・列を追加できます）",
+                table_options={
+                    'contextMenu': {
+                        'items': {
+                            'row_above': {'name': '上に行を挿入'},
+                            'row_below': {'name': '下に行を挿入'},
+                            'col_left': {'name': '左に列を挿入'},
+                            'col_right': {'name': '右に列を挿入'},
+                            'remove_row': {'name': '行を削除'},
+                            'remove_col': {'name': '列を削除'},
+                            'undo': {'name': '元に戻す'},
+                            'redo': {'name': 'やり直す'}
+                        }
+                    },
+                    'stretchH': 'all',        # 列を水平方向に伸ばす
+                    'autoWrapRow': True,      # 行の自動折り返し
+                    'autoWrapCol': True,      # 列の自動折り返し
+                    'minSpareRows': 0,        # 最小予備行数
+                }
+            )),
+            ('embed', EmbedBlock(
+                label="埋め込み",
+                help_text="YouTube動画やツイート等の埋め込み"
+            )),
+            ('code', CodeBlock()),
+        ], icon='media', label='🎨 メディア・埋め込み')),
         
-        ('cta', CTABlock()),
-        ('banner', BannerBlock()),
+        # ========================================
+        # 💰 収益化・CTA（CTAボタン・バナー・関連ツール）
+        # ========================================
+        ('monetization', blocks.StreamBlock([
+            ('cta', CTABlock()),
+            ('banner', BannerBlock()),
+            ('related_tools', RelatedToolsBlock()),
+        ], icon='link', label='💰 収益化・CTA')),
         
-        # 関連コンテンツ
-        ('related_tools', RelatedToolsBlock()),
-        
-        # レイアウト調整
-        ('spacer', SpacerBlock()),
-        
-        # アラート・通知
-        ('alert', AlertBlock()),
-        
-        # 折りたたみ
-        ('accordion', AccordionBlock()),
+        # ========================================
+        # 🔧 レイアウト・装飾（目次・余白・アラート・アコーディオン）
+        # ========================================
+        ('layout', blocks.StreamBlock([
+            ('table_of_contents', TableOfContentsBlock()),
+            ('spacer', SpacerBlock()),
+            ('alert', AlertBlock()),
+            ('accordion', AccordionBlock()),
+        ], icon='cogs', label='🔧 レイアウト・装飾')),
     ], use_json_field=True, blank=True)
     
     # ========================================

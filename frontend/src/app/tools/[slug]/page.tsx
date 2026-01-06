@@ -315,8 +315,8 @@ export default async function ToolDetailPage({ params }: PageProps) {
 
           {/* ========== AdSense広告（ツール詳細中盤） ========== */}
           <AdSense
-            adSlot="XXXXXXXXXX"
-            adFormat="rectangle"
+            slot="XXXXXXXXXX"
+            format="rectangle"
             placement="tool-detail-middle"
             className="my-8"
           />

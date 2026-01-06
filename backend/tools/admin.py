@@ -241,12 +241,14 @@ class ToolAdmin(ImportExportModelAdmin):
         'tool_type',
         'price_type',
         'display_platforms',
+        'image_status_display',
         'created_at'
     ]
     list_filter = [
         'tool_type',
         'price_type',
         'platform',
+        'image_status',
         'created_at'
     ]
     search_fields = [
@@ -260,8 +262,13 @@ class ToolAdmin(ImportExportModelAdmin):
     readonly_fields = [
         'created_at',
         'updated_at',
-        'computed_ribbons_display'
+        'computed_ribbons_display',
+        'image_status',
+        'image_last_checked',
+        'image_error_message'
     ]
+    
+    actions = ['run_check_tool_images']
     
     # filter_horizontalは削除（ClusterTaggableManagerと互換性なし）
     # tagsフィールドは標準のタグ入力ウィジェットを使用
@@ -280,6 +287,11 @@ class ToolAdmin(ImportExportModelAdmin):
         ('表示設定', {
             'fields': ('ribbons', 'computed_ribbons_display', 'image_url', 'external_url'),
             'description': '※ "new"（14日以内）と "popular"（TOP10）は自動計算されます。手動リボン（featured等）のみ入力してください。'
+        }),
+        ('画像ステータス', {
+            'fields': ('image_status', 'image_last_checked', 'image_error_message'),
+            'classes': ('collapse',),
+            'description': '画像URLの有効性チェック結果（自動更新）'
         }),
         ('メタデータ', {
             'fields': ('metadata',),
@@ -344,6 +356,53 @@ class ToolAdmin(ImportExportModelAdmin):
         return obj.platform.upper()
     display_platforms.short_description = 'プラットフォーム'
     
+    def image_status_display(self, obj):
+        """画像ステータスをアイコン付きで表示"""
+        from django.utils.html import format_html
+        
+        status_icons = {
+            'ok': '✅',
+            'error': '❌',
+            'unchecked': '⏳',
+        }
+        icon = status_icons.get(obj.image_status, '❓')
+        
+        if obj.image_status == 'error' and obj.image_error_message:
+            return format_html(
+                '<span title="{}">{} {}</span>',
+                obj.image_error_message,
+                icon,
+                obj.get_image_status_display()
+            )
+        return f'{icon} {obj.get_image_status_display()}'
+    image_status_display.short_description = '画像'
+    image_status_display.admin_order_field = 'image_status'
+    
+    @admin.action(description='🔍 画像URLチェック実行')
+    def run_check_tool_images(self, request, queryset):
+        """管理コマンド check_tool_images を実行"""
+        from django.core.management import call_command
+        from io import StringIO
+        
+        # コマンドの出力をキャプチャ
+        out = StringIO()
+        
+        try:
+            call_command('check_tool_images', stdout=out)
+            output = out.getvalue()
+            
+            # 出力からサマリー行を抽出
+            lines = output.strip().split('\n')
+            summary_line = lines[-1] if lines else ''
+            
+            if '正常' in summary_line and 'エラー' in summary_line:
+                messages.success(request, f'✅ {summary_line}')
+            else:
+                messages.info(request, f'実行完了: {summary_line}')
+                
+        except Exception as e:
+            messages.error(request, f'❌ コマンド実行エラー: {str(e)}')
+    
     def computed_ribbons_display(self, obj):
         """自動計算されるリボンを表示"""
         if obj.pk:
@@ -357,6 +416,7 @@ class ToolAdmin(ImportExportModelAdmin):
 
 # ToolStats と EventLog のインポート追加
 from .models_stats import ToolStats, EventLog
+
 
 
 @admin.register(ToolStats)

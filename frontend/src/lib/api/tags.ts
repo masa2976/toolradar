@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { Tag, TagsParams, TagsResponse } from '@/types';
+import type { Tag, TagsParams, TagCategory } from '@/types';
 
 // ============================================
 // タグ関連API
@@ -15,7 +15,17 @@ export const tagsApi = {
    * @returns タグ一覧
    */
   getTags: async (params?: TagsParams): Promise<Tag[]> => {
-    const { data } = await apiClient.get<TagsResponse>('/tags/', { params });
-    return data.results;  // ページネーションレスポンスからresultsを取り出す
+    // ページネーション無効のため、直接配列が返る
+    const { data } = await apiClient.get<Tag[]>('/tags/', { params });
+    return data;
+  },
+
+  /**
+   * タグカテゴリ一覧取得
+   * @returns タグカテゴリ一覧（display_order順）
+   */
+  getTagCategories: async (): Promise<TagCategory[]> => {
+    const { data } = await apiClient.get<TagCategory[]>('/tag-categories/');
+    return data;
   },
 };

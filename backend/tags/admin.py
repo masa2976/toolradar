@@ -2,7 +2,7 @@ from django.contrib import admin
 from taggit.models import Tag as TaggitTag
 from import_export import resources, fields, widgets
 from import_export.admin import ImportExportModelAdmin
-from .models import Tag, TagMapping
+from .models import Tag, TagMapping, TagCategory
 
 # django-taggitの標準Tag管理画面を非表示にする
 admin.site.unregister(TaggitTag)
@@ -67,7 +67,7 @@ class TagResource(resources.ModelResource):
         use_bulk = True               # バルク操作で高速化
         batch_size = 1000            # バッチサイズ
         fields = (
-            'id', 'name', 'slug', 'category', 
+            'id', 'name', 'slug', 'tag_category', 
             'synonyms', 'description'
         )
         export_order = fields
@@ -98,13 +98,13 @@ class TagAdmin(ImportExportModelAdmin):
     list_display = [
         'name',
         'slug',
-        'category',
+        'tag_category',
         'get_tool_count',
         'get_post_count',
         'get_synonyms_display',
     ]
     list_filter = [
-        'category',
+        'tag_category',
     ]
     search_fields = [
         'name',
@@ -117,7 +117,7 @@ class TagAdmin(ImportExportModelAdmin):
     
     fieldsets = (
         ('基本情報', {
-            'fields': ('name', 'slug', 'category')
+            'fields': ('name', 'slug', 'tag_category')
         }),
         ('表記ゆれ', {
             'fields': ('synonyms',),
@@ -149,6 +149,37 @@ class TagAdmin(ImportExportModelAdmin):
             return ', '.join(obj.synonyms[:3])  # 最初の3つのみ表示
         return '-'
     get_synonyms_display.short_description = '表記ゆれ'
+
+
+@admin.register(TagCategory)
+class TagCategoryAdmin(admin.ModelAdmin):
+    """タグカテゴリ管理画面"""
+    
+    list_display = [
+        'name',
+        'slug',
+        'display_order',
+        'get_tag_count',
+    ]
+    
+    list_editable = ['display_order']
+    
+    search_fields = ['name', 'slug']
+    
+    fieldsets = (
+        ('基本情報', {
+            'fields': ('name', 'slug', 'display_order')
+        }),
+        ('説明', {
+            'fields': ('description',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_tag_count(self, obj):
+        """タグ数を表示"""
+        return obj.tags.count()
+    get_tag_count.short_description = 'タグ数'
 
 
 @admin.register(TagMapping)

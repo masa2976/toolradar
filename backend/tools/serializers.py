@@ -102,3 +102,4 @@ class ToolListSerializer(serializers.ModelSerializer):
     def get_ribbons(self, obj):
         """手動リボン + 自動計算リボンを取得"""
         return obj.all_ribbons
+

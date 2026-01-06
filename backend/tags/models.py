@@ -7,6 +7,62 @@ import unicodedata
 
 
 @register_snippet
+class TagCategory(models.Model):
+    """タグカテゴリマスタ"""
+    
+    name = models.CharField(
+        "カテゴリ名",
+        max_length=50,
+        unique=True,
+        help_text="表示用のカテゴリ名（例: テクニカル指標）"
+    )
+    
+    slug = models.SlugField(
+        "スラッグ",
+        max_length=30,
+        unique=True,
+        help_text="URL・コード用の識別子（例: technical_indicator）"
+    )
+    
+    description = models.TextField(
+        "説明",
+        blank=True,
+        help_text="カテゴリの説明（任意）"
+    )
+    
+    display_order = models.PositiveIntegerField(
+        "表示順",
+        default=0,
+        help_text="小さい順に表示"
+    )
+    
+    panels = [
+        FieldPanel('name'),
+        FieldPanel('slug'),
+        FieldPanel('description'),
+        FieldPanel('display_order'),
+    ]
+    
+    class Meta:
+        verbose_name = "タグカテゴリ"
+        verbose_name_plural = "タグカテゴリ"
+        ordering = ['display_order', 'name']
+    
+    def __str__(self):
+        return self.name
+    
+    @classmethod
+    def get_default_categories(cls):
+        """初期カテゴリデータ"""
+        return [
+            {'name': 'テクニカル指標', 'slug': 'technical_indicator', 'display_order': 1},
+            {'name': '取引スタイル', 'slug': 'trade_style', 'display_order': 2},
+            {'name': '通貨ペア', 'slug': 'currency_pair', 'display_order': 3},
+            {'name': '戦略タイプ', 'slug': 'strategy_type', 'display_order': 4},
+        ]
+
+
+@register_snippet
 class TagMapping(models.Model):
     """タグ正規化マッピング管理"""
     
@@ -71,20 +127,17 @@ class Tag(TagBase):
     # 管理者が事前登録したタグのみ使用可能（自動作成を防止）
     free_tagging = False
     
-    CATEGORY_CHOICES = [
-        ('technical_indicator', 'テクニカル指標'),
-        ('trade_style', '取引スタイル'),
-        ('currency_pair', '通貨ペア'),
-        ('strategy_type', '戦略タイプ'),
-    ]
-    
-    category = models.CharField(
-        "カテゴリ",
-        max_length=30,
-        choices=CATEGORY_CHOICES,
-        help_text="タグのカテゴリ",
-        blank=True
+    # カテゴリ（ForeignKey）
+    tag_category = models.ForeignKey(
+        TagCategory,
+        on_delete=models.PROTECT,
+        verbose_name="カテゴリ",
+        related_name="tags",
+        null=True,
+        blank=True,
+        help_text="タグのカテゴリ"
     )
+    
     synonyms = ArrayField(
         models.CharField(max_length=50),
         verbose_name="表記ゆれ",
@@ -101,7 +154,7 @@ class Tag(TagBase):
     panels = [
         FieldPanel('name'),
         FieldPanel('slug'),
-        FieldPanel('category'),
+        FieldPanel('tag_category'),
         FieldPanel('synonyms'),
         FieldPanel('description'),
     ]
@@ -109,7 +162,7 @@ class Tag(TagBase):
     class Meta:
         verbose_name = "タグ"
         verbose_name_plural = "タグ"
-        ordering = ['category', 'name']
+        ordering = ['tag_category__display_order', 'name']
     
     @classmethod
     def normalize_string(cls, text):
@@ -224,18 +277,25 @@ class Tag(TagBase):
         # 新規作成
         from django.utils.text import slugify
         
-        # TagMappingからカテゴリを取得
-        category = 'technical_indicator'
+        # TagMappingからカテゴリスラッグを取得
+        category_slug = 'technical_indicator'
         try:
             mapping = TagMapping.objects.get(canonical_name=canonical_name)
-            category = mapping.category
+            category_slug = mapping.category
         except TagMapping.DoesNotExist:
+            pass
+        
+        # TagCategoryを取得（存在しない場合はNone）
+        tag_category = None
+        try:
+            tag_category = TagCategory.objects.get(slug=category_slug)
+        except TagCategory.DoesNotExist:
             pass
         
         tag = cls.objects.create(
             name=canonical_name,
             slug=slugify(canonical_name),
-            category=category,
+            tag_category=tag_category,
             synonyms=[tag_name] if tag_name != canonical_name else []
         )
         

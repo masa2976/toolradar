@@ -1,6 +1,6 @@
 # === コアフレームワーク ===
 Django==5.2.6
-wagtail==7.0.3
+wagtail==7.2.1
 
 # === API・連携 ===
 djangorestframework==3.16.1
